@@ -11,7 +11,7 @@
       "photoUrl": "/photos/approved/47892916.jpg",
       "filename": "47892916.jpg",
       "issues": [],
-      "updatedAt": "2025-11-18T20:48:48.299Z",
+      "updatedAt": "2025-11-18T21:11:35.688Z",
       "createdAt": "2025-11-17T21:57:13.836Z",
       "suneduStatus": "Pendiente",
       "relative_path": "photos\\approved\\47892916.jpg"
@@ -46,6 +46,22 @@
       "issues": [],
       "updatedAt": "2025-11-18T17:17:20.555Z",
       "createdAt": "2025-11-18T16:45:53.225Z",
+      "suneduStatus": "Pendiente"
+    },
+    {
+      "dni": "41032447",
+      "code": "151428",
+      "name": "GLORIA MARCELO TUPA",
+      "email": "gloria.marcelo@uma.edu.pe",
+      "esp": "FARMACIA Y BIOQUÍMICA",
+      "category": "approved",
+      "ok": true,
+      "photoUrl": "/photos/approved/41032447.jpg",
+      "filename": "41032447.jpg",
+      "relative_path": "photos\\approved\\41032447.jpg",
+      "issues": [],
+      "updatedAt": "2025-11-18T21:13:06.501Z",
+      "createdAt": "2025-11-18T21:13:06.501Z",
       "suneduStatus": "Pendiente"
     }
   ]

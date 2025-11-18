@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>UMA — Portal del Estudiante</title>
+
+    <!-- Lottie loader script -->
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.5/dist/dotlottie-wc.js" type="module"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -37,9 +41,45 @@
             padding: 20px;
         }
 
+        /* Blur portal while loading */
+        body.loading .container {
+            filter: blur(4px);
+            pointer-events: none;
+        }
+
         .container {
             max-width: 1280px;
             margin: 0 auto;
+        }
+
+        /* LOADER OVERLAY */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            transition: opacity .25s ease, visibility .25s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        #loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-inner {
+            display: grid;
+            gap: 12px;
+            justify-items: center;
+            text-align: center;
+        }
+
+        .loader-text {
+            font-weight: 700;
+            color: var(--text);
         }
 
         /* Header */
@@ -229,7 +269,6 @@
             gap: 10px;
         }
 
-        /* grey base line */
         .stepper::before {
             content: "";
             position: absolute;
@@ -241,7 +280,6 @@
             z-index: 0;
         }
 
-        /* green filled line */
         .stepper-line-fill {
             position: absolute;
             top: 20px;
@@ -542,558 +580,582 @@
     </style>
 </head>
 <body>
-<div class="container">
-    <!-- Header -->
-    <div class="header">
-        <div class="brand">
-            <img src="assets/images/logo-pdf.png" alt="UMA" class="brand-logo-img">
-            <div class="brand-text">
-                <h1>Portal del Estudiante UMA</h1>
-                <p>Sistema de gestión académica</p>
-                <div class="session-chip" id="sessionChip">
-                    <i class="fas fa-circle-notch fa-spin" style="font-size:11px;"></i>
-                    Conectando…
-                </div>
-            </div>
+    <!-- Loader overlay -->
+    <div id="loader">
+        <div class="loader-inner">
+            <dotlottie-wc
+                src="https://lottie.host/025cadf8-218c-478b-b333-ce2f491b8805/NtPOItH00c.lottie"
+                style="width: 260px;height: 260px"
+                autoplay
+                loop>
+            </dotlottie-wc>
+            <div class="loader-text">Cargando tu portal…</div>
         </div>
     </div>
 
-    <!-- Top navigation -->
-    <div class="top-nav" id="topNav">
-        <button type="button" class="nav-link active" data-route="dashboard">
-            <i class="fas fa-gauge-high"></i> Tablero
-        </button>
-        <button type="button" class="nav-link" data-route="application">
-            <i class="fas fa-file-lines"></i> Formulario
-        </button>
-        <button type="button" class="nav-link" data-route="photo">
-            <i class="fas fa-id-card"></i> Cargar foto
-        </button>
-        <button type="button" class="nav-link" id="logoutBtn">
-            <i class="fas fa-right-from-bracket"></i> Cerrar sesión
-        </button>
-    </div>
-
-    <!-- MAIN APP -->
-    <main id="screen-app">
-        <!-- DASHBOARD -->
-        <section id="route-dashboard" class="screen active">
-            <div class="main-grid">
-                <!-- Progreso -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="progress-header">
-                            <h2 class="card-title">
-                                <i class="fas fa-tasks"></i> Progreso de inscripción
-                            </h2>
-                            <div class="progress-status" id="progressStatusText">
-                                0% completado
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="stepper" id="steps"></div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <img src="assets/images/logo-pdf.png" alt="UMA" class="brand-logo-img">
+                <div class="brand-text">
+                    <h1>Portal del Estudiante UMA</h1>
+                    <p>Sistema de gestión académica</p>
+                    <div class="session-chip" id="sessionChip">
+                        <i class="fas fa-circle-notch fa-spin" style="font-size:11px;"></i>
+                        Conectando…
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Perfil -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <i class="fas fa-user-circle"></i> Perfil del estudiante
-                        </h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="profile-header">
-                            <div class="profile-avatar" id="profileAvatar">--</div>
-                            <div class="profile-info">
-                                <div class="profile-name" id="pname">—</div>
-                                <div class="profile-email" id="pemail">—</div>
-                                <div class="profile-status" id="statusPill">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Estado: Pendiente</span>
+        <!-- Top navigation -->
+        <div class="top-nav" id="topNav">
+            <button type="button" class="nav-link active" data-route="dashboard">
+                <i class="fas fa-gauge-high"></i> Tablero
+            </button>
+            <button type="button" class="nav-link" data-route="application">
+                <i class="fas fa-file-lines"></i> Formulario
+            </button>
+            <button type="button" class="nav-link" data-route="photo">
+                <i class="fas fa-id-card"></i> Cargar foto
+            </button>
+            <button type="button" class="nav-link" id="logoutBtn">
+                <i class="fas fa-right-from-bracket"></i> Cerrar sesión
+            </button>
+        </div>
+
+        <!-- MAIN APP -->
+        <main id="screen-app">
+            <!-- DASHBOARD -->
+            <section id="route-dashboard" class="screen active">
+                <div class="main-grid">
+                    <!-- Progreso -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="progress-header">
+                                <h2 class="card-title">
+                                    <i class="fas fa-tasks"></i> Progreso de inscripción
+                                </h2>
+                                <div class="progress-status" id="progressStatusText">
+                                    0% completado
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="profile-details-grid">
-                            <div class="profile-field">
-                                <div class="profile-field-label">DNI</div>
-                                <div class="profile-field-value" id="pdni">—</div>
+                        <div class="card-body">
+                            <div class="stepper" id="steps"></div>
+                        </div>
+                    </div>
+
+                    <!-- Perfil -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="fas fa-user-circle"></i> Perfil del estudiante
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="profile-header">
+                                <div class="profile-avatar" id="profileAvatar">--</div>
+                                <div class="profile-info">
+                                    <div class="profile-name" id="pname">—</div>
+                                    <div class="profile-email" id="pemail">—</div>
+                                    <div class="profile-status" id="statusPill">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Estado: Pendiente</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="profile-field">
-                                <div class="profile-field-label">Género</div>
-                                <div class="profile-field-value" id="pgenero">—</div>
-                            </div>
-                            <div class="profile-field">
-                                <div class="profile-field-label">Código</div>
-                                <div class="profile-field-value" id="pcodigo">—</div>
-                            </div>
-                            <div class="profile-field">
-                                <div class="profile-field-label">Especialidad</div>
-                                <div class="profile-field-value" id="pespecialidad">—</div>
-                            </div>
-                            <div class="profile-field">
-                                <div class="profile-field-label">Celular</div>
-                                <div class="profile-field-value" id="pcelular">—</div>
+                            
+                            <div class="profile-details-grid">
+                                <div class="profile-field">
+                                    <div class="profile-field-label">DNI</div>
+                                    <div class="profile-field-value" id="pdni">—</div>
+                                </div>
+                                <div class="profile-field">
+                                    <div class="profile-field-label">Género</div>
+                                    <div class="profile-field-value" id="pgenero">—</div>
+                                </div>
+                                <div class="profile-field">
+                                    <div class="profile-field-label">Código</div>
+                                    <div class="profile-field-value" id="pcodigo">—</div>
+                                </div>
+                                <div class="profile-field">
+                                    <div class="profile-field-label">Especialidad</div>
+                                    <div class="profile-field-value" id="pespecialidad">—</div>
+                                </div>
+                                <div class="profile-field">
+                                    <div class="profile-field-label">Celular</div>
+                                    <div class="profile-field-value" id="pcelular">—</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- FORMULARIO -->
-        <section id="route-application" class="screen">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <i class="fas fa-file-pen"></i> Información de la solicitud
-                    </h2>
+            <!-- FORMULARIO -->
+            <section id="route-application" class="screen">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-file-pen"></i> Información de la solicitud
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="appForm">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label>👤 Nombre</label>
+                                    <input id="name_profile" class="input" readonly placeholder="—">
+                                </div>
+                                <div class="field">
+                                    <label>✉️ Correo</label>
+                                    <input id="email_profile" class="input" readonly placeholder="—">
+                                </div>
+                                <div class="field">
+                                    <label>🔖 Código</label>
+                                    <input id="codigo_profile" class="input" readonly placeholder="—">
+                                </div>
+                                <div class="field">
+                                    <label>🎓 Programa / Especialidad</label>
+                                    <select id="program" required>
+                                        <option value="">Selecciona…</option>
+                                        <option>FARMACIA Y BIOQUÍMICA</option>
+                                        <option>ENFERMERÍA</option>
+                                        <option>PSICOLOGÍA</option>
+                                        <option>CONTABILIDAD Y FINANZAS</option>
+                                        <option>ADMINISTRACIÓN Y NEGOCIOS INTERNACIONALES</option>
+                                        <option>ADMINISTRACIÓN Y MARKETING</option>
+                                        <option>NUTRICIÓN Y DIETÉTICA</option>
+                                    </select>
+                                    <input type="hidden" id="especialidad" value="">
+                                </div>
+                                <div class="field">
+                                    <label>🆔 Número de documento (DNI)</label>
+                                    <input id="doc" class="input" placeholder="12345678" required>
+                                </div>
+                                <div class="field">
+                                    <label>⚧ Género</label>
+                                    <input id="gender_profile" class="input" readonly placeholder="—">
+                                </div>
+                                <div class="field">
+                                    <label>📞 Teléfono</label>
+                                    <input id="phone" class="input" placeholder="+51 999 999 999">
+                                </div>
+                                <div class="field">
+                                    <label>📍 Dirección</label>
+                                    <input id="address" class="input" placeholder="Calle, Ciudad">
+                                </div>
+                            </div>
+                            <div class="btn-row">
+                                <button class="btn" type="submit">
+                                    <i class="fas fa-floppy-disk"></i> Guardar
+                                </button>
+                                <span id="saved" style="font-size:13px;color:var(--muted);display:none">
+                                    Guardado ✓
+                                </span>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form id="appForm">
-                        <div class="form-grid">
-                            <div class="field">
-                                <label>👤 Nombre</label>
-                                <input id="name_profile" class="input" readonly placeholder="—">
+            </section>
+
+            <!-- FOTO -->
+            <section id="route-photo" class="screen">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fas fa-id-card-clip"></i> Subir foto
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">
+                            JPG/PNG, &lt; 50 KB, tamaño final 240×288, fondo blanco, rostro centrado.
+                        </p>
+
+                        <div id="drop" class="upload">
+                            <strong>Arrastra y suelta</strong> o
+                            <label for="file" style="text-decoration:underline;color:var(--primary);cursor:pointer">
+                                elige un archivo
+                            </label>
+                            <input id="file" type="file" accept="image/jpeg,image/png" style="display:none">
+                        </div>
+
+                        <div id="prev" class="preview" style="display:none">
+                            <div class="ph">
+                                <img id="imgPrev" alt="Vista previa" />
                             </div>
-                            <div class="field">
-                                <label>✉️ Correo</label>
-                                <input id="email_profile" class="input" readonly placeholder="—">
-                            </div>
-                            <div class="field">
-                                <label>🔖 Código</label>
-                                <input id="codigo_profile" class="input" readonly placeholder="—">
-                            </div>
-                            <div class="field">
-                                <label>🎓 Programa / Especialidad</label>
-                                <select id="program" required>
-                                    <option value="">Selecciona…</option>
-                                    <option>FARMACIA Y BIOQUÍMICA</option>
-                                    <option>ENFERMERÍA</option>
-                                    <option>PSICOLOGÍA</option>
-                                    <option>CONTABILIDAD Y FINANZAS</option>
-                                    <option>ADMINISTRACIÓN Y NEGOCIOS INTERNACIONALES</option>
-                                    <option>ADMINISTRACIÓN Y MARKETING</option>
-                                    <option>NUTRICIÓN Y DIETÉTICA</option>
-                                </select>
-                                <input type="hidden" id="especialidad" value="">
-                            </div>
-                            <div class="field">
-                                <label>🆔 Número de documento (DNI)</label>
-                                <input id="doc" class="input" placeholder="12345678" required>
-                            </div>
-                            <div class="field">
-                                <label>⚧ Género</label>
-                                <input id="gender_profile" class="input" readonly placeholder="—">
-                            </div>
-                            <div class="field">
-                                <label>📞 Teléfono</label>
-                                <input id="phone" class="input" placeholder="+51 999 999 999">
-                            </div>
-                            <div class="field">
-                                <label>📍 Dirección</label>
-                                <input id="address" class="input" placeholder="Calle, Ciudad">
+                            <div class="checks">
+                                <div class="check">Tipo: <b id="mType">—</b></div>
+                                <div class="check">Tamaño: <b id="mSize">—</b></div>
+                                <div class="check">Resolución: <b id="mDim">—</b></div>
                             </div>
                         </div>
-                        <div class="btn-row">
-                            <button class="btn" type="submit">
-                                <i class="fas fa-floppy-disk"></i> Guardar
+
+                        <div class="btn-row" style="margin-top:12px;">
+                            <button id="savePhoto" class="btn" disabled type="button">
+                                <i class="fas fa-cloud-upload-alt"></i> Guardar foto
                             </button>
-                            <span id="saved" style="font-size:13px;color:var(--muted);display:none">
-                                Guardado ✓
-                            </span>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </section>
-
-        <!-- FOTO -->
-        <section id="route-photo" class="screen">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <i class="fas fa-id-card-clip"></i> Subir foto
-                    </h2>
-                </div>
-                <div class="card-body">
-                    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">
-                        JPG/PNG, &lt; 50 KB, tamaño final 240×288, fondo blanco, rostro centrado.
-                    </p>
-
-                    <div id="drop" class="upload">
-                        <strong>Arrastra y suelta</strong> o
-                        <label for="file" style="text-decoration:underline;color:var(--primary);cursor:pointer">
-                            elige un archivo
-                        </label>
-                        <input id="file" type="file" accept="image/jpeg,image/png" style="display:none">
-                    </div>
-
-                    <div id="prev" class="preview" style="display:none">
-                        <div class="ph">
-                            <img id="imgPrev" alt="Vista previa" />
-                        </div>
-                        <div class="checks">
-                            <div class="check">Tipo: <b id="mType">—</b></div>
-                            <div class="check">Tamaño: <b id="mSize">—</b></div>
-                            <div class="check">Resolución: <b id="mDim">—</b></div>
+                            <button id="clearPhoto" type="button" class="btn secondary">
+                                Limpiar
+                            </button>
+                            <span id="photoMsg" style="font-size:13px;margin-left:4px;"></span>
                         </div>
                     </div>
-
-                    <div class="btn-row" style="margin-top:12px;">
-                        <button id="savePhoto" class="btn" disabled type="button">
-                            <i class="fas fa-cloud-upload-alt"></i> Guardar foto
-                        </button>
-                        <button id="clearPhoto" type="button" class="btn secondary">
-                            Limpiar
-                        </button>
-                        <span id="photoMsg" style="font-size:13px;margin-left:4px;"></span>
-                    </div>
                 </div>
-            </div>
-        </section>
-    </main>
-</div>
+            </section>
+        </main>
+    </div>
 
-<div id="errOverlay"></div>
+    <div id="errOverlay"></div>
 
-<script>
-(function () {
-    const sessionChip = document.getElementById('sessionChip');
-    const profileAvatar = document.getElementById('profileAvatar');
-    const errOverlay = document.getElementById('errOverlay');
+    <script>
+    (function () {
+        const loader = document.getElementById('loader');
+        const sessionChip = document.getElementById('sessionChip');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const errOverlay = document.getElementById('errOverlay');
 
-    const code =
-        new URLSearchParams(location.search).get('code') ||
-        localStorage.getItem('uma_codigo') ||
-        '';
+        function hideLoader() {
+            if (loader) loader.classList.add('hidden');
+            document.body.classList.remove('loading');
+        }
 
-    if (!localStorage.getItem('uma_session_role')) {
-        location.replace('index.html');
-        return;
-    }
+        // start in loading mode
+        document.body.classList.add('loading');
 
-    if (code) {
-        localStorage.setItem('uma_codigo', code);
-    }
+        const code =
+            new URLSearchParams(location.search).get('code') ||
+            localStorage.getItem('uma_codigo') ||
+            '';
 
-    if (code) {
-        sessionChip.innerHTML = '<i class="fas fa-circle-check" style="font-size:11px;"></i> Conectado: ' + code;
-    } else {
-        sessionChip.innerHTML = '<i class="fas fa-circle-exclamation" style="font-size:11px;"></i> Conectado';
-    }
-
-    function goto(route) {
-        document.querySelectorAll('.nav-link').forEach(b => {
-            if (b.dataset.route === route) b.classList.add('active');
-            else if (b.id !== 'logoutBtn') b.classList.remove('active');
-        });
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const sec = document.getElementById('route-' + route);
-        if (sec) sec.classList.add('active');
-        location.hash = '#' + route;
-    }
-
-    document.getElementById('topNav').addEventListener('click', (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        if (btn.id === 'logoutBtn') {
-            localStorage.clear();
+        if (!localStorage.getItem('uma_session_role')) {
+            hideLoader();
             location.replace('index.html');
             return;
         }
-        const route = btn.dataset.route;
-        if (route) goto(route);
-    });
 
-    goto((location.hash || '#dashboard').slice(1));
+        if (code) {
+            localStorage.setItem('uma_codigo', code);
+        }
 
-    function showError(msg) {
-        errOverlay.textContent = msg;
-        errOverlay.style.display = 'block';
-        setTimeout(() => { errOverlay.style.display = 'none'; }, 3500);
-    }
+        if (code) {
+            sessionChip.innerHTML = '<i class="fas fa-circle-check" style="font-size:11px;"></i> Conectado: ' + code;
+        } else {
+            sessionChip.innerHTML = '<i class="fas fa-circle-exclamation" style="font-size:11px;"></i> Conectado';
+        }
 
-    function initialsFromName(name) {
-        if (!name) return '--';
-        const parts = String(name).trim().split(/\s+/);
-        if (!parts.length) return '--';
-        if (parts.length === 1) return parts[0][0].toUpperCase();
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-
-    async function loadProfile() {
-        try {
-            const r = await fetch('/api/student/profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ code })
+        function goto(route) {
+            document.querySelectorAll('.nav-link').forEach(b => {
+                if (b.dataset.route === route) b.classList.add('active');
+                else if (b.id !== 'logoutBtn') b.classList.remove('active');
             });
-
-            const text = await r.text();
-            const j = text ? JSON.parse(text) : {};
-            if (!r.ok || !j.ok) {
-                throw new Error(j.error?.message || 'No se pudo obtener el perfil');
-            }
-
-            const s = j.data?.data || j.data || {};
-            const firstName = s.name || s.nombres || s.nombre || '';
-            const lastName =
-                s.lastname || s.apellidos || s.apellido ||
-                [s.apellidoPaterno, s.apellidoMaterno].filter(Boolean).join(' ') || '';
-            const fullName = [firstName, lastName].filter(Boolean).join(' ') || '—';
-
-            const email = s.email_institucional || s.emailInstitucional || s.email || '—';
-            const dni = s.dni || s.document || s.numeroDocumento || s.c_dni || '—';
-            const gender = s.gender || s.genero || s.sexo || '—';
-            const academicCode = s.academicCode || s.codigo || s.code || s.c_codalu || code || '—';
-            const specialty = s.schoolName || s.specialtyName || s.especialidad || s.carrera || '—';
-            const phone = s.phone || s.telefono || s.celular || '—';
-            const status = s.status || s.estado || 'Pendiente';
-
-            document.getElementById('pname').textContent = fullName;
-            document.getElementById('pemail').textContent = email;
-            document.getElementById('pdni').textContent = dni;
-            document.getElementById('pgenero').textContent = gender;
-            document.getElementById('pcodigo').textContent = academicCode;
-            document.getElementById('pespecialidad').textContent = specialty;
-            document.getElementById('pcelular').textContent = phone;
-
-            const statusPill = document.getElementById('statusPill');
-            statusPill.innerHTML = '<i class="fas fa-clock"></i><span>Estado: ' + status + '</span>';
-
-            const initials = initialsFromName(fullName !== '—' ? fullName : academicCode);
-            profileAvatar.textContent = initials;
-
-            document.getElementById('name_profile').value = fullName !== '—' ? fullName : '';
-            document.getElementById('email_profile').value = email !== '—' ? email : '';
-            document.getElementById('codigo_profile').value = academicCode !== '—' ? academicCode : '';
-            document.getElementById('doc').value = dni !== '—' ? dni : '';
-            document.getElementById('phone').value = phone !== '—' ? phone : '';
-            document.getElementById('gender_profile').value = gender !== '—' ? gender : '';
-
-            const programSel = document.getElementById('program');
-            if (specialty !== '—') {
-                const target = String(specialty).trim().toLowerCase();
-                const match = Array.from(programSel.options)
-                    .find(o => o.text.trim().toLowerCase() === target);
-                if (match) {
-                    programSel.value = match.value;
-                    document.getElementById('especialidad').value = match.value;
-                }
-            }
-
-        } catch (err) {
-            console.warn('Profile load error:', err);
-            showError('No se pudo cargar el perfil: ' + (err.message || err));
-        }
-    }
-
-    function renderProgress() {
-        const stepsEl = document.getElementById('steps');
-        const progressStatus = document.getElementById('progressStatusText');
-
-        const formDone = localStorage.getItem('uma_form_saved') === '1';
-        const photoDone = localStorage.getItem('uma_photo_ok') === '1';
-
-        const titles = [
-            'Iniciaste sesión',
-            'Completa tu formulario',
-            'Sube tu foto',
-            'Revisión y envío'
-        ];
-
-        // states: 'done', 'current', 'todo'
-        const states = ['done', 'todo', 'todo', 'todo'];
-        if (formDone) states[1] = 'done';
-        if (photoDone) states[2] = 'done';
-
-        // first todo becomes current
-        let firstTodo = states.findIndex(s => s === 'todo');
-        if (firstTodo === -1) firstTodo = states.length - 1;
-        if (states[firstTodo] !== 'done') states[firstTodo] = 'current';
-
-        const completed = states.filter(s => s === 'done').length;
-        const percent = Math.round((completed / states.length) * 100);
-        progressStatus.textContent = percent + '% completado';
-
-        let html = '<div class="stepper-line-fill" id="progressLine"></div>';
-        for (let i = 0; i < 4; i++) {
-            const cls =
-                states[i] === 'done'
-                    ? 'step-item done'
-                    : states[i] === 'current'
-                    ? 'step-item current'
-                    : 'step-item';
-            html += `
-                <div class="${cls}">
-                    <div class="step-circle">${i + 1}</div>
-                    <div class="step-title-h">${titles[i]}</div>
-                </div>`;
-        }
-        stepsEl.innerHTML = html;
-
-        const line = document.getElementById('progressLine');
-        let fillPercent = 0;
-        if (completed > 1) {
-            fillPercent = ((completed - 1) / (states.length - 1)) * 100;
-        }
-        if (line) line.style.width = fillPercent + '%';
-    }
-
-    document.getElementById('appForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        localStorage.setItem('uma_form_saved', '1');
-        renderProgress();
-        const saved = document.getElementById('saved');
-        saved.style.display = '';
-        setTimeout(() => { saved.style.display = 'none'; }, 1500);
-    });
-
-    (function photoSection() {
-        const drop = document.getElementById('drop');
-        const fileInput = document.getElementById('file');
-        const prev = document.getElementById('prev');
-        const imgPrev = document.getElementById('imgPrev');
-        const saveBtn = document.getElementById('savePhoto');
-        const clrBtn = document.getElementById('clearPhoto');
-        const photoMsg = document.getElementById('photoMsg');
-        const mType = document.getElementById('mType');
-        const mSize = document.getElementById('mSize');
-        const mDim = document.getElementById('mDim');
-
-        let lastValidResult = null;
-
-        async function callValidator(f) {
-            saveBtn.disabled = true;
-            photoMsg.style.color = '';
-            photoMsg.textContent = 'Validando foto…';
-
-            const dni = document.getElementById('doc').value || document.getElementById('pdni').textContent || 'unknown';
-            const fullName = document.getElementById('pname').textContent || '';
-            const email = document.getElementById('pemail').textContent || '';
-            const esp = document.getElementById('pespecialidad').textContent || '';
-
-            try {
-                const formData = new FormData();
-                formData.append('image', f);
-                formData.append('dni', dni);
-                formData.append('code', code || '');
-                formData.append('name', fullName);
-                formData.append('email', email);
-                formData.append('esp', esp);
-
-                const resp = await fetch('/validate', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const text = await resp.text();
-                let data = {};
-                try { data = text ? JSON.parse(text) : {}; } catch (e) {}
-
-                if (!resp.ok) {
-                    const issues = (data && data.issues && data.issues.length)
-                        ? data.issues.join(' | ')
-                        : `Error en la validación del servidor (HTTP ${resp.status}).`;
-                    photoMsg.style.color = '#e74c3c';
-                    photoMsg.textContent = 'Servidor rechazó la foto: ' + issues;
-                    saveBtn.disabled = true;
-                    localStorage.removeItem('uma_photo_ok');
-                    renderProgress();
-                    return;
-                }
-
-                if (data.ok === true) {
-                    photoMsg.style.color = '#27ae60';
-                    photoMsg.textContent = '✓ Foto aprobada por el validador.';
-                    saveBtn.disabled = false;
-                    lastValidResult = data;
-                    localStorage.setItem('uma_photo_ok', '1');
-                    renderProgress();
-                } else {
-                    const issues = data.issues && data.issues.length
-                        ? data.issues.join(' | ')
-                        : 'Foto rechazada por el validador.';
-                    photoMsg.style.color = '#e74c3c';
-                    photoMsg.textContent = issues;
-                    saveBtn.disabled = true;
-                    lastValidResult = null;
-                    localStorage.removeItem('uma_photo_ok');
-                    renderProgress();
-                }
-            } catch (err) {
-                console.error('Validation error:', err);
-                photoMsg.style.color = '#e74c3c';
-                photoMsg.textContent = 'Error de conexión al validar: ' + err.message;
-                saveBtn.disabled = true;
-                localStorage.removeItem('uma_photo_ok');
-                renderProgress();
-            }
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const sec = document.getElementById('route-' + route);
+            if (sec) sec.classList.add('active');
+            location.hash = '#' + route;
         }
 
-        function showFile(f) {
-            const url = URL.createObjectURL(f);
-            imgPrev.src = url;
-            prev.style.display = 'grid';
-            mType.textContent = f.type || '—';
-            mSize.textContent = (f.size / 1024).toFixed(1) + ' KB';
-
-            const im = new Image();
-            im.onload = () => {
-                mDim.textContent = `${im.width}×${im.height}`;
-            };
-            im.src = url;
-
-            callValidator(f);
-        }
-
-        drop.addEventListener('click', () => fileInput.click());
-        drop.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            drop.classList.add('dragover');
-        });
-        drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
-        drop.addEventListener('drop', (e) => {
-            e.preventDefault();
-            drop.classList.remove('dragover');
-            const f = e.dataTransfer.files?.[0];
-            if (f) showFile(f);
-        });
-
-        fileInput.addEventListener('change', () => {
-            const f = fileInput.files?.[0];
-            if (f) showFile(f);
-        });
-
-        clrBtn.addEventListener('click', () => {
-            fileInput.value = '';
-            prev.style.display = 'none';
-            saveBtn.disabled = true;
-            photoMsg.textContent = '';
-            photoMsg.style.color = '';
-            lastValidResult = null;
-            localStorage.removeItem('uma_photo_ok');
-            renderProgress();
-        });
-
-        saveBtn.addEventListener('click', () => {
-            if (!lastValidResult || !lastValidResult.ok) {
-                photoMsg.style.color = '#e67e22';
-                photoMsg.textContent = 'Primero selecciona una foto válida.';
+        document.getElementById('topNav').addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            if (btn.id === 'logoutBtn') {
+                localStorage.clear();
+                hideLoader();
+                location.replace('index.html');
                 return;
             }
-            photoMsg.style.color = '';
-            photoMsg.textContent = 'Foto ya guardada en el servidor para este estudiante.';
+            const route = btn.dataset.route;
+            if (route) goto(route);
         });
-    })();
 
-    renderProgress();
-    loadProfile();
-})();
-</script>
+        goto((location.hash || '#dashboard').slice(1));
+
+        function showError(msg) {
+            errOverlay.textContent = msg;
+            errOverlay.style.display = 'block';
+            setTimeout(() => { errOverlay.style.display = 'none'; }, 3500);
+        }
+
+        function initialsFromName(name) {
+            if (!name) return '--';
+            const parts = String(name).trim().split(/\s+/);
+            if (!parts.length) return '--';
+            if (parts.length === 1) return parts[0][0].toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        async function loadProfile() {
+            try {
+                const r = await fetch('/api/student/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ code })
+                });
+
+                const text = await r.text();
+                const j = text ? JSON.parse(text) : {};
+                if (!r.ok || !j.ok) {
+                    throw new Error(j.error?.message || 'No se pudo obtener el perfil');
+                }
+
+                const s = j.data?.data || j.data || {};
+                const firstName = s.name || s.nombres || s.nombre || '';
+                const lastName =
+                    s.lastname || s.apellidos || s.apellido ||
+                    [s.apellidoPaterno, s.apellidoMaterno].filter(Boolean).join(' ') || '';
+                const fullName = [firstName, lastName].filter(Boolean).join(' ') || '—';
+
+                const email = s.email_institucional || s.emailInstitucional || s.email || '—';
+                const dni = s.dni || s.document || s.numeroDocumento || s.c_dni || '—';
+                const gender = s.gender || s.genero || s.sexo || '—';
+                const academicCode = s.academicCode || s.codigo || s.code || s.c_codalu || code || '—';
+                const specialty = s.schoolName || s.specialtyName || s.especialidad || s.carrera || '—';
+                const phone = s.phone || s.telefono || s.celular || '—';
+                const status = s.status || s.estado || 'Pendiente';
+
+                document.getElementById('pname').textContent = fullName;
+                document.getElementById('pemail').textContent = email;
+                document.getElementById('pdni').textContent = dni;
+                document.getElementById('pgenero').textContent = gender;
+                document.getElementById('pcodigo').textContent = academicCode;
+                document.getElementById('pespecialidad').textContent = specialty;
+                document.getElementById('pcelular').textContent = phone;
+
+                const statusPill = document.getElementById('statusPill');
+                statusPill.innerHTML = '<i class="fas fa-clock"></i><span>Estado: ' + status + '</span>';
+
+                const initials = initialsFromName(fullName !== '—' ? fullName : academicCode);
+                profileAvatar.textContent = initials;
+
+                document.getElementById('name_profile').value = fullName !== '—' ? fullName : '';
+                document.getElementById('email_profile').value = email !== '—' ? email : '';
+                document.getElementById('codigo_profile').value = academicCode !== '—' ? academicCode : '';
+                document.getElementById('doc').value = dni !== '—' ? dni : '';
+                document.getElementById('phone').value = phone !== '—' ? phone : '';
+                document.getElementById('gender_profile').value = gender !== '—' ? gender : '';
+
+                const programSel = document.getElementById('program');
+                if (specialty !== '—') {
+                    const target = String(specialty).trim().toLowerCase();
+                    const match = Array.from(programSel.options)
+                        .find(o => o.text.trim().toLowerCase() === target);
+                    if (match) {
+                        programSel.value = match.value;
+                        document.getElementById('especialidad').value = match.value;
+                    }
+                }
+
+            } catch (err) {
+                console.warn('Profile load error:', err);
+                showError('No se pudo cargar el perfil: ' + (err.message || err));
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function renderProgress() {
+            const stepsEl = document.getElementById('steps');
+            const progressStatus = document.getElementById('progressStatusText');
+
+            const formDone = localStorage.getItem('uma_form_saved') === '1';
+            const photoDone = localStorage.getItem('uma_photo_ok') === '1';
+
+            const titles = [
+                'Iniciaste sesión',
+                'Completa tu formulario',
+                'Sube tu foto',
+                'Revisión y envío'
+            ];
+
+            const states = ['done', 'todo', 'todo', 'todo'];
+            if (formDone) states[1] = 'done';
+            if (photoDone) states[2] = 'done';
+
+            let firstTodo = states.findIndex(s => s === 'todo');
+            if (firstTodo === -1) firstTodo = states.length - 1;
+            if (states[firstTodo] !== 'done') states[firstTodo] = 'current';
+
+            const completed = states.filter(s => s === 'done').length;
+            const percent = Math.round((completed / states.length) * 100);
+            progressStatus.textContent = percent + '% completado';
+
+            let html = '<div class="stepper-line-fill" id="progressLine"></div>';
+            for (let i = 0; i < 4; i++) {
+                const cls =
+                    states[i] === 'done'
+                        ? 'step-item done'
+                        : states[i] === 'current'
+                        ? 'step-item current'
+                        : 'step-item';
+                html += `
+                    <div class="${cls}">
+                        <div class="step-circle">${i + 1}</div>
+                        <div class="step-title-h">${titles[i]}</div>
+                    </div>`;
+            }
+            stepsEl.innerHTML = html;
+
+            const line = document.getElementById('progressLine');
+            let fillPercent = 0;
+            if (completed > 1) {
+                fillPercent = ((completed - 1) / (states.length - 1)) * 100;
+            }
+            if (line) line.style.width = fillPercent + '%';
+        }
+
+        document.getElementById('appForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            localStorage.setItem('uma_form_saved', '1');
+            renderProgress();
+            const saved = document.getElementById('saved');
+            saved.style.display = '';
+            setTimeout(() => { saved.style.display = 'none'; }, 1500);
+        });
+
+        (function photoSection() {
+            const drop = document.getElementById('drop');
+            const fileInput = document.getElementById('file');
+            const prev = document.getElementById('prev');
+            const imgPrev = document.getElementById('imgPrev');
+            const saveBtn = document.getElementById('savePhoto');
+            const clrBtn = document.getElementById('clearPhoto');
+            const photoMsg = document.getElementById('photoMsg');
+            const mType = document.getElementById('mType');
+            const mSize = document.getElementById('mSize');
+            const mDim = document.getElementById('mDim');
+
+            let lastValidResult = null;
+
+            async function callValidator(f) {
+                saveBtn.disabled = true;
+                photoMsg.style.color = '';
+                photoMsg.textContent = 'Validando foto…';
+
+                const dni = document.getElementById('doc').value || document.getElementById('pdni').textContent || 'unknown';
+                const fullName = document.getElementById('pname').textContent || '';
+                const email = document.getElementById('pemail').textContent || '';
+                const esp = document.getElementById('pespecialidad').textContent || '';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('image', f);
+                    formData.append('dni', dni);
+                    formData.append('code', code || '');
+                    formData.append('name', fullName);
+                    formData.append('email', email);
+                    formData.append('esp', esp);
+
+                    const resp = await fetch('/validate', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const text = await resp.text();
+                    let data = {};
+                    try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+
+                    if (!resp.ok) {
+                        const issues = (data && data.issues && data.issues.length)
+                            ? data.issues.join(' | ')
+                            : `Error en la validación del servidor (HTTP ${resp.status}).`;
+                        photoMsg.style.color = '#e74c3c';
+                        photoMsg.textContent = 'Servidor rechazó la foto: ' + issues;
+                        saveBtn.disabled = true;
+                        localStorage.removeItem('uma_photo_ok');
+                        renderProgress();
+                        return;
+                    }
+
+                    if (data.ok === true) {
+                        photoMsg.style.color = '#27ae60';
+                        photoMsg.textContent = '✓ Foto aprobada por el validador.';
+                        saveBtn.disabled = false;
+                        lastValidResult = data;
+                        localStorage.setItem('uma_photo_ok', '1');
+                        renderProgress();
+                    } else {
+                        const issues = data.issues && data.issues.length
+                            ? data.issues.join(' | ')
+                            : 'Foto rechazada por el validador.';
+                        photoMsg.style.color = '#e74c3c';
+                        photoMsg.textContent = issues;
+                        saveBtn.disabled = true;
+                        lastValidResult = null;
+                        localStorage.removeItem('uma_photo_ok');
+                        renderProgress();
+                    }
+                } catch (err) {
+                    console.error('Validation error:', err);
+                    photoMsg.style.color = '#e74c3c';
+                    photoMsg.textContent = 'Error de conexión al validar: ' + err.message;
+                    saveBtn.disabled = true;
+                    localStorage.removeItem('uma_photo_ok');
+                    renderProgress();
+                }
+            }
+
+            function showFile(f) {
+                const url = URL.createObjectURL(f);
+                imgPrev.src = url;
+                prev.style.display = 'grid';
+                mType.textContent = f.type || '—';
+                mSize.textContent = (f.size / 1024).toFixed(1) + ' KB';
+
+                const im = new Image();
+                im.onload = () => {
+                    mDim.textContent = `${im.width}×${im.height}`;
+                };
+                im.src = url;
+
+                callValidator(f);
+            }
+
+            drop.addEventListener('click', () => fileInput.click());
+            drop.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                drop.classList.add('dragover');
+            });
+            drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+            drop.addEventListener('drop', (e) => {
+                e.preventDefault();
+                drop.classList.remove('dragover');
+                const f = e.dataTransfer.files?.[0];
+                if (f) showFile(f);
+            });
+
+            fileInput.addEventListener('change', () => {
+                const f = fileInput.files?.[0];
+                if (f) showFile(f);
+            });
+
+            clrBtn.addEventListener('click', () => {
+                fileInput.value = '';
+                prev.style.display = 'none';
+                saveBtn.disabled = true;
+                photoMsg.textContent = '';
+                photoMsg.style.color = '';
+                lastValidResult = null;
+                localStorage.removeItem('uma_photo_ok');
+                renderProgress();
+            });
+
+            saveBtn.addEventListener('click', () => {
+                if (!lastValidResult || !lastValidResult.ok) {
+                    photoMsg.style.color = '#e67e22';
+                    photoMsg.textContent = 'Primero selecciona una foto válida.';
+                    return;
+                }
+                photoMsg.style.color = '';
+                photoMsg.textContent = 'Foto ya guardada en el servidor para este estudiante.';
+            });
+        })();
+
+        renderProgress();
+        loadProfile();
+    })();
+    </script>
 </body>
 </html>
