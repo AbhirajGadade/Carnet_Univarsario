@@ -1,0 +1,426 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+UMA Photo Validator API
+
+Rules:
+- Image must be a valid JPG/PNG
+- Detect 1 face (Haar)
+- Resize to 240x288
+- Background mostly white/clear
+- Final JPEG <= 50KB
+- Save to photos/approved or photos/rejected
+"""
+
+import base64
+import io
+import os
+import re
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+from dotenv import load_dotenv
+import cv2
+import numpy as np
+from cv2 import data as cv2_data
+from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image, ImageOps
+
+load_dotenv()
+
+# ---------------- Config ----------------
+TARGET_W, TARGET_H = 240, 288
+MAX_BYTES = int(os.getenv("UMA_MAX_BYTES", 50 * 1024))  # 50 KB strict
+PHOTOS_DIR = os.getenv("UMA_PHOTOS_DIR", "photos")
+
+# background / face config
+BORDER = 10
+WHITE_L_MIN = 75
+LAB_BG_DIST = 16
+FACE_CENTER_X = (0.28, 0.72)
+FACE_CENTER_Y = (0.26, 0.72)
+FACE_REL_H = (0.18, 0.72)
+
+os.makedirs(os.path.join(PHOTOS_DIR, "approved"), exist_ok=True)
+os.makedirs(os.path.join(PHOTOS_DIR, "rejected"), exist_ok=True)
+
+# Pillow resampling constant
+try:
+    from PIL.Image import Resampling
+    RESAMPLE_LANCZOS = Resampling.LANCZOS
+except Exception:
+    RESAMPLE_LANCZOS = getattr(Image, "LANCZOS", getattr(Image, "BILINEAR", 2))
+
+# Optional Google Drive (can be disabled by USE_DRIVE=0)
+USE_DRIVE = os.getenv("USE_DRIVE", "0") == "1"
+DRIVE_SA_PATH = os.getenv("DRIVE_SA_PATH")
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+DRIVE_PUBLIC = os.getenv("DRIVE_PUBLIC", "1") == "1"
+
+_drive_svc = None
+_drive_ready = False
+_drive_email: Optional[str] = None
+
+
+def _log(*a: Any) -> None:
+    print(*a, flush=True)
+
+
+def _ensure_drive():
+    """Lazy init Drive client, only if USE_DRIVE=1."""
+    global _drive_svc, _drive_ready, _drive_email
+    if _drive_svc or not USE_DRIVE:
+        return _drive_svc
+    if not DRIVE_SA_PATH or not os.path.exists(DRIVE_SA_PATH):
+        _log("[drive] Service account JSON not found:", DRIVE_SA_PATH)
+        return None
+
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+
+        scopes = ["https://www.googleapis.com/auth/drive"]
+        creds = service_account.Credentials.from_service_account_file(
+            DRIVE_SA_PATH, scopes=scopes
+        )
+        _drive_email = creds.service_account_email
+        _drive_svc = build("drive", "v3", credentials=creds, cache_discovery=False)
+        _drive_ready = True
+        _log(f"[drive] client ready as {_drive_email}")
+    except Exception as e:
+        _log("[drive] init error:", repr(e))
+        _drive_svc = None
+    return _drive_svc
+
+
+def _drive_upload(path: str, filename: str) -> Dict[str, Any]:
+    info: Dict[str, Any] = {}
+    if not USE_DRIVE:
+        info["error"] = "USE_DRIVE=0"
+        return info
+
+    svc = _ensure_drive()
+    if not svc:
+        info["error"] = "drive_not_ready"
+        return info
+
+    if not DRIVE_FOLDER_ID:
+        info["error"] = "DRIVE_FOLDER_ID missing"
+        return info
+
+    if not os.path.exists(path):
+        info["error"] = "file_not_found"
+        return info
+
+    try:
+        from googleapiclient.http import MediaFileUpload
+
+        file_metadata = {"name": filename, "parents": [DRIVE_FOLDER_ID]}
+        media = MediaFileUpload(path, mimetype="image/jpeg", resumable=False)
+
+        created = (
+            svc.files()
+            .create(
+                body=file_metadata,
+                media_body=media,
+                fields="id, webViewLink, webContentLink",
+            )
+            .execute()
+        )
+
+        file_id = created.get("id")
+        info.update(
+            {
+                "id": file_id,
+                "webViewLink": created.get("webViewLink"),
+                "webContentLink": created.get("webContentLink"),
+            }
+        )
+
+        if DRIVE_PUBLIC and file_id:
+            try:
+                svc.permissions().create(
+                    fileId=file_id,
+                    body={"role": "reader", "type": "anyone"},
+                ).execute()
+            except Exception as e:
+                _log("[drive] permission error:", repr(e))
+
+        if file_id:
+            info["public_url"] = f"https://drive.google.com/uc?id={file_id}"
+            _log(f"[drive] uploaded: {filename} -> {file_id}")
+    except Exception as e:
+        info["error"] = repr(e)
+        _log("[drive] upload error:", repr(e))
+
+    return info
+
+
+# ---------------- FastAPI app ----------------
+app = FastAPI(title="UMA Photo Validator")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # adjust for prod
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ---------------- Helpers ----------------
+def sanitize_name(s: Optional[str]) -> str:
+    return re.sub(r"[^\w\-]", "", (s or "").strip(), flags=re.ASCII)
+
+
+def load_pil(upload: UploadFile) -> Image.Image:
+    data = upload.file.read()
+    pil = Image.open(io.BytesIO(data))
+    if hasattr(ImageOps, "exif_transpose"):
+        pil = ImageOps.exif_transpose(pil)
+    return pil.convert("RGB")  # type: ignore
+
+
+def to_np(img: Image.Image) -> np.ndarray:
+    return np.array(img)
+
+
+def detect_face(bgr: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
+    """Return (x,y,w,h) of biggest detected face, or None."""
+    try:
+        cascade_path = os.path.join(
+            cv2_data.haarcascades, "haarcascade_frontalface_default.xml"
+        )
+        cas = cv2.CascadeClassifier(cascade_path)
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        faces = cas.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5, flags=cv2.CASCADE_SCALE_IMAGE
+        )
+        if len(faces) == 0:
+            return None
+        faces = sorted(faces, key=lambda r: int(r[2]) * int(r[3]), reverse=True)
+        x, y, w, h = [int(v) for v in faces[0]]
+        return (x, y, w, h)
+    except Exception:
+        return None
+
+
+def crop_to_ratio(rgb: np.ndarray, face: Optional[Tuple[int, int, int, int]]) -> np.ndarray:
+    """Crop image to TARGET_W:TARGET_H, trying to keep face centered."""
+    h, w = rgb.shape[:2]
+    target = TARGET_W / TARGET_H
+    r = w / h
+    if r > target:
+        new_w = int(h * target)
+        new_h = h
+        cx = w // 2
+        if face:
+            cx = face[0] + face[2] // 2
+        x1 = max(0, min(w - new_w, cx - new_w // 2))
+        y1 = 0
+    else:
+        new_w = w
+        new_h = int(w / target)
+        cy = h // 2
+        if face:
+            cy = face[1] + face[3] // 2
+        x1 = 0
+        y1 = max(0, min(h - new_h, cy - new_h // 2))
+    return rgb[y1: y1 + new_h, x1: x1 + new_w]
+
+
+def rgb_to_lab(a: np.ndarray) -> np.ndarray:
+    return cv2.cvtColor(a, cv2.COLOR_RGB2LAB)
+
+
+def whiten_background(rgb: np.ndarray) -> Tuple[np.ndarray, float]:
+    """Make background whiter and return (image, % of border that is already bright)."""
+    h, w = rgb.shape[:2]
+    b = min(BORDER, h // 4, w // 4)
+    border = np.concatenate(
+        [
+            rgb[:b, :, :].reshape(-1, 3),
+            rgb[-b:, :, :].reshape(-1, 3),
+            rgb[:, :b, :].reshape(-1, 3),
+            rgb[:, -b:, :].reshape(-1, 3),
+        ],
+        axis=0,
+    ).astype(np.uint8)
+
+    lab_img = rgb_to_lab(rgb)
+    lab_border = rgb_to_lab(border.reshape(-1, 1, 3)).reshape(-1, 3)
+    bg_lab = np.median(lab_border, axis=0)
+
+    white_pct = (lab_border[:, 0] >= WHITE_L_MIN).sum() / lab_border.shape[0] * 100.0
+    dist = np.linalg.norm(lab_img - bg_lab[None, None, :], axis=2)
+    mask = dist < LAB_BG_DIST
+
+    out = rgb.copy()
+    out[mask] = (255, 255, 255)
+    return out, float(white_pct)
+
+
+def jpg_under_size(pil_img: Image.Image, limit: int = MAX_BYTES) -> bytes:
+    """Binary search JPEG quality so that file <= limit bytes if possible."""
+    lo, hi = 35, 95
+    best: Optional[bytes] = None
+    while lo <= hi:
+        q = (lo + hi) // 2
+        buf = io.BytesIO()
+        pil_img.save(buf, format="JPEG", quality=q, optimize=True, progressive=True)
+        size = buf.tell()
+        if size <= limit:
+            best = buf.getvalue()
+            lo = q + 1
+        else:
+            hi = q - 1
+    if best is not None:
+        return best
+    buf = io.BytesIO()
+    pil_img.save(buf, format="JPEG", quality=35, optimize=True, progressive=True)
+    return buf.getvalue()
+
+
+def face_rules(
+    rgb: np.ndarray, face: Optional[Tuple[int, int, int, int]]
+) -> List[str]:
+    """Return list of face-related issues, empty if OK."""
+    issues: List[str] = []
+    if face is None:
+        issues.append("No se detectó un rostro claro.")
+        return issues
+    x, y, w, h = face
+    H, W = rgb.shape[:2]
+    cx, cy = x + w / 2, y + h / 2
+    if not (W * FACE_CENTER_X[0] <= cx <= W * FACE_CENTER_X[1]):
+        issues.append("Rostro no está centrado horizontalmente.")
+    if not (H * FACE_CENTER_Y[0] <= cy <= H * FACE_CENTER_Y[1]):
+        issues.append("Rostro no está centrado verticalmente.")
+    if not (H * FACE_REL_H[0] <= h <= H * FACE_REL_H[1]):
+        issues.append("Rostro demasiado pequeño o grande.")
+    return issues
+
+
+# ---------------- Routes ----------------
+@app.get("/health")
+def health() -> Dict[str, Any]:
+    _ensure_drive()
+    return {
+        "ok": True,
+        "msg": "UMA validator healthy",
+        "target": [TARGET_W, TARGET_H],
+        "max_bytes": MAX_BYTES,
+        "drive": {
+            "use": USE_DRIVE,
+            "ready": _drive_ready,
+            "folder": DRIVE_FOLDER_ID,
+            "sa": _drive_email,
+        },
+    }
+
+
+@app.post("/validate")
+def validate(
+    dni: Optional[str] = Form(None, description="Student DNI used as output filename"),
+    image: UploadFile = File(...),
+) -> Dict[str, Any]:
+    """
+    Main validator endpoint.
+
+    Request: multipart/form-data with fields:
+      - image: file
+      - dni: student identifier (used for filename)
+    """
+    dni = sanitize_name(dni) or "unknown_user"
+    issues: List[str] = []
+
+    try:
+        try:
+            pil_in = load_pil(image)
+        except Exception:
+            return {
+                "ok": False,
+                "issues": ["Archivo no es una imagen válida."],
+                "bytes": 0,
+            }
+
+        rgb = to_np(pil_in)
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+        face = detect_face(bgr)
+        issues += face_rules(rgb, face)
+
+        cropped = crop_to_ratio(rgb, face)
+        whitened, white_pct = whiten_background(cropped)
+        if white_pct < 60:
+            issues.append("Fondo no es suficientemente claro/blanco.")
+
+        pil_out = Image.fromarray(whitened).resize(
+            (TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS
+        )
+        jpg = jpg_under_size(pil_out, MAX_BYTES)
+
+        if len(jpg) > MAX_BYTES:
+            issues.append(
+                f"La foto final debe pesar ≤ {MAX_BYTES // 1024} KB "
+                f"(actual: {len(jpg) / 1024:.1f} KB)."
+            )
+
+        ok = (len(issues) == 0) and (len(jpg) <= MAX_BYTES)
+
+        if not ok and not issues:
+            issues.append("La foto no cumple con los criterios requeridos.")
+
+        bucket = "approved" if ok else "rejected"
+        ts = int(time.time())
+        fname = f"{dni}.jpg" if ok else f"{dni}_{ts}.jpg"
+        save_dir = os.path.join(PHOTOS_DIR, bucket)
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(save_dir, fname)
+        with open(save_path, "wb") as f:
+            f.write(jpg)
+
+        data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
+
+        drive_info: Dict[str, Any] = {}
+        http_url: Optional[str] = None
+        if ok and USE_DRIVE:
+            drive_info = _drive_upload(save_path, fname)
+            http_url = (
+                drive_info.get("public_url")
+                or drive_info.get("webContentLink")
+                or drive_info.get("webViewLink")
+            )
+
+        _log("[validator]", "dni=", dni, "ok=", ok, "issues=", issues, "bytes=", len(jpg))
+
+        return {
+            "ok": ok,
+            "issues": issues,
+            "width": TARGET_W,
+            "height": TARGET_H,
+            "bytes": len(jpg),
+            "category": bucket,
+            "filename": fname,
+            "relative_path": save_path,
+            "data_url": data_url,
+            "http_url": http_url,
+            "drive": drive_info,
+        }
+
+    except Exception as e:
+        # Safety net: always return JSON, never raw error
+        _log("[validator] unexpected error:", repr(e))
+        return {
+            "ok": False,
+            "issues": [f"Error interno del validador: {repr(e)}"],
+            "bytes": 0,
+        }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("validator_api:app", host="127.0.0.1", port=8000, reload=True)

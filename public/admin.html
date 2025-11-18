@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UMA — Panel de Administración</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #f02454;
+      --outline: #ffc2d0;
+      --ring: #ffd3dd;
+      --muted: #6b7280;
+      --text: #0f172a;
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --shadow: 0 20px 60px rgba(15, 23, 42, .06)
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.55 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand img {
+      height: 36px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--outline);
+      background: #fff;
+    }
+
+    .pill.info {
+      color: #a31231;
+      background: #fff5f7;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #eee;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .pad {
+      padding: 16px;
+    }
+
+    .nav {
+      padding: 10px;
+    }
+
+    .section {
+      font-weight: 800;
+      font-size: 12px;
+      color: #4b5563;
+      letter-spacing: .06em;
+      margin: 8px 8px 6px;
+    }
+
+    .link {
+      appearance: none;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 6px 0;
+      border-radius: 12px;
+      color: #0f172a;
+      border: 1px solid transparent;
+      cursor: pointer;
+      background: #fff;
+      text-align: left;
+    }
+
+    .link:hover {
+      background: #fff5f7;
+      border-color: #ffe3ea;
+    }
+
+    .link.active {
+      outline: 3px solid var(--ring);
+      border-color: var(--outline);
+      background: #fff0f4;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .search {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .btn {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #f02454;
+      background: linear-gradient(180deg, #f76385, #f02454);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      box-shadow: 0 8px 20px rgba(240, 36, 84, .18);
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--primary);
+      border-color: #ffe0e7;
+      box-shadow: none;
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    thead th {
+      padding: 8px 10px;
+      text-align: left;
+      color: #475569;
+      font-size: 12px;
+    }
+
+    tbody tr {
+      background: #fff;
+      border: 1px solid #eee;
+    }
+
+    tbody td {
+      padding: 8px 10px;
+      border-top: 1px solid #f3f4f6;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+    }
+
+    tbody td:first-child {
+      border-left: 1px solid #f3f4f6;
+      border-radius: 10px 0 0 10px;
+    }
+
+    tbody td:last-child {
+      border-right: 1px solid #f3f4f6;
+      border-radius: 0 10px 10px 0;
+    }
+
+    .empty {
+      padding: 16px;
+      text-align: center;
+      color: #9ca3af;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .status-approved {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-rejected {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .status-pending {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    #toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 9999;
+    }
+
+    /* Drawer */
+    #drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 360px;
+      max-width: 100%;
+      height: 100%;
+      background: #fff;
+      border-left: 1px solid #e5e7eb;
+      box-shadow: -10px 0 40px rgba(15, 23, 42, .2);
+      transform: translateX(100%);
+      transition: transform .25s ease;
+      z-index: 9998;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #drawer.open {
+      transform: translateX(0);
+    }
+
+    #drawer header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    #drawer main {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #drawer footer {
+      padding: 12px 16px;
+      border-top: 1px solid #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    #drawer img {
+      width: 140px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    .drawer-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .drawer-meta {
+      font-size: 13px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .drawer-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: .06em;
+      font-weight: 700;
+    }
+
+    .drawer-value {
+      font-size: 13px;
+    }
+
+    .closeBtn {
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      background: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <img src="assets/images/logo-pdf.png" alt="UMA">
+        <div>
+          <h1 style="margin:0;font-size:18px">Panel Administrativo UMA</h1>
+          <div class="muted">Gestión de solicitudes y fotos</div>
+        </div>
+      </div>
+      <div id="session" class="pill info">Conectado</div>
+    </div>
+
+    <div class="app">
+      <aside class="card">
+        <nav class="nav" id="sideNav">
+          <div class="section">GESTIÓN</div>
+          <button type="button" class="link" data-route="approved">Solicitudes Aprobadas</button>
+          <button type="button" class="link" data-route="rejected">Solicitudes Rechazadas</button>
+          <div class="section">SUNEDU</div>
+          <button type="button" class="link" data-route="sunedu">Envíos y Paquetes</button>
+          <div class="section">SISTEMA</div>
+          <button type="button" class="link" data-route="logout">Cerrar sesión</button>
+        </nav>
+      </aside>
+
+      <main>
+        <!-- Aprobadas -->
+        <section id="route-approved" class="card pad screen active">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <input type="text" class="search" placeholder="Buscar por correo, DNI o nombre…">
+              <button id="exportCSV" class="btn ghost" type="button">Exportar CSV</button>
+              <span class="muted" id="countApproved">0 resultado(s)</span>
+            </div>
+          </div>
+          <div class="toolbar" style="margin-top:4px;margin-bottom:8px;">
+            <div class="toolbar-left">
+              <button class="btn" id="btnZip" type="button">Generar Paquetes (ZIP)</button>
+              <button class="btn ghost" id="btnMarkSent" type="button">Marcar como Enviado</button>
+              <button class="btn ghost" id="btnDelete" type="button">Eliminar seleccionados</button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Estudiante</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Especialidad</th>
+                <th>IA</th>
+                <th>SUNEDU</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="approvedRows"></tbody>
+          </table>
+        </section>
+
+        <!-- Rechazadas -->
+        <section id="route-rejected" class="card pad screen">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <input type="text" class="search" placeholder="Buscar por correo, DNI o nombre…">
+              <span class="muted" id="countRejected">0 resultado(s)</span>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Estudiante</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Especialidad</th>
+                <th>Motivo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rejectedRows"></tbody>
+          </table>
+        </section>
+
+        <!-- SUNEDU / Envíos y Paquetes -->
+        <section id="route-sunedu" class="card pad screen">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <input type="text" class="search" placeholder="Buscar…">
+              <span class="muted" id="countSunedu">0 aprobado(s)</span>
+            </div>
+          </div>
+          <div class="toolbar" style="margin-top:4px;margin-bottom:8px;">
+            <div class="toolbar-left">
+              <button class="btn" id="btnZipSunedu" type="button">Generar Paquetes (SUNEDU)</button>
+              <button class="btn ghost" id="btnMarkSentSunedu" type="button">Marcar como Enviado</button>
+              <button class="btn ghost" id="btnDeleteSunedu" type="button">Eliminar seleccionados</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Código</th>
+                <th>Estudiante</th>
+                <th>DNI</th>
+                <th>Estado SUNEDU</th>
+                <th>Actualizado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="suneduRows"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Drawer -->
+  <aside id="drawer">
+    <header>
+      <div>
+        <div id="dTitle" style="font-weight:700;font-size:15px;">Estudiante</div>
+        <div id="dSub" class="muted" style="font-size:12px;">Detalle de solicitud</div>
+      </div>
+      <button id="closeDrawer" class="closeBtn" type="button">Cerrar</button>
+    </header>
+    <main>
+      <div class="drawer-grid">
+        <img id="dPhoto" alt="Foto" />
+        <div class="drawer-meta">
+          <div><span class="drawer-label">IA</span><div id="dAI" class="drawer-value"></div></div>
+          <div><span class="drawer-label">SUNEDU</span><div id="dSunedu" class="drawer-value"></div></div>
+          <div><span class="drawer-label">Actualizado</span><div id="dUpdated" class="drawer-value"></div></div>
+        </div>
+      </div>
+      <div class="drawer-meta">
+        <div><span class="drawer-label">Código</span><div id="dCode" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">Estudiante</span><div id="dName" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">DNI</span><div id="dDni" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">Email</span><div id="dEmail" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">Especialidad</span><div id="dEsp" class="drawer-value">—</div></div>
+      </div>
+    </main>
+    <footer>
+      <button id="dGenerate" class="btn" type="button">Generar ZIP</button>
+      <button id="dMarkSent" class="btn ghost" type="button">Marcar como Enviado</button>
+    </footer>
+  </aside>
+
+  <script>
+    (function () {
+      const TOKEN_KEY = 'uma_token_admin';
+
+      function toast(m, err) {
+        const el = document.createElement('div');
+        el.className = 'pill' + (err ? ' info' : '');
+        el.textContent = m;
+        document.getElementById('toast').appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      }
+
+      // ---- guard ----
+      (function guard() {
+        const role = localStorage.getItem('uma_session_role');
+        const email = localStorage.getItem('uma_session_email') || 'admin';
+        if (role !== 'admin' || !localStorage.getItem(TOKEN_KEY)) {
+          document.getElementById('session').textContent = `Modo demo admin`;
+          return;
+        }
+        document.getElementById('session').textContent = `Conectado: ${email}`;
+      })();
+
+      function goto(hash) {
+        document.querySelectorAll('.link').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.link[data-route="${hash}"]`)?.classList.add('active');
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('route-' + hash).classList.add('active');
+      }
+
+      document.getElementById('sideNav').addEventListener('click', (e) => {
+        const btn = e.target.closest('button.link');
+        if (!btn) return;
+        if (btn.dataset.route === 'logout') {
+          localStorage.clear();
+          location.replace('index.html');
+          return;
+        }
+        goto(btn.dataset.route);
+      });
+      goto('approved');
+
+      // Drawer references
+      const drawer = document.getElementById('drawer');
+      const dTitle = document.getElementById('dTitle');
+      const dSub = document.getElementById('dSub');
+      const dPhoto = document.getElementById('dPhoto');
+      const dAI = document.getElementById('dAI');
+      const dSunedu = document.getElementById('dSunedu');
+      const dName = document.getElementById('dName');
+      const dDni = document.getElementById('dDni');
+      const dEmail = document.getElementById('dEmail');
+      const dEsp = document.getElementById('dEsp');
+      const dUpdated = document.getElementById('dUpdated');
+      const dCode = document.getElementById('dCode');
+
+      document.getElementById('closeDrawer').addEventListener('click', () => drawer.classList.remove('open'));
+      document.getElementById('dGenerate').addEventListener('click', () => toast('Paquete generado (demo: usa el botón principal)', false));
+      document.getElementById('dMarkSent').addEventListener('click', () => toast('Marcada como enviada (demo)', false));
+
+      function openDrawer(kind, row) {
+        dTitle.textContent = row.name || 'Estudiante';
+        dSub.textContent = kind === 'rejected' ? 'Solicitud rechazada' : 'Solicitud aprobada';
+        dPhoto.src = row.photoUrl || '';
+        const ok = row.category === 'approved';
+
+        dAI.textContent = ok ? 'Aprobada por IA' : 'Rechazada por IA';
+        dAI.className = 'status-badge ' + (ok ? 'status-approved' : 'status-rejected');
+
+        const sunStatus = row.suneduStatus || 'Pendiente';
+        dSunedu.textContent = sunStatus;
+        dSunedu.className = 'status-badge ' + (sunStatus === 'Enviado' ? 'status-approved' : 'status-pending');
+
+        dCode.textContent = row.code || row.codigo || '—';
+        dName.textContent = row.name || '—';
+        dDni.textContent = row.dni || '—';
+        dEmail.textContent = row.email || '—';
+        dEsp.textContent = row.esp || '—';
+        dUpdated.textContent = row.updatedAt ? new Date(row.updatedAt).toLocaleString('es-PE') : '—';
+
+        drawer.classList.add('open');
+      }
+
+      function renderEmptyRow(tbodyId, colSpan, text) {
+        const tb = document.getElementById(tbodyId);
+        tb.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty">${text}</div></td></tr>`;
+      }
+
+      function renderTable(tbodyId, rows, kind, datasets) {
+        const tb = document.getElementById(tbodyId);
+        if (!rows.length) {
+          if (kind === 'approved') {
+            renderEmptyRow(tbodyId, 8, 'Sin solicitudes aprobadas aún.');
+          } else if (kind === 'rejected') {
+            renderEmptyRow(tbodyId, 6, 'Sin solicitudes rechazadas.');
+          } else {
+            renderEmptyRow(tbodyId, 7, 'No hay aprobados para SUNEDU.');
+          }
+          return;
+        }
+
+        if (kind === 'approved') {
+          tb.innerHTML = rows.map((r, i) => `
+            <tr>
+              <td><input type="checkbox" data-dni="${r.dni || ''}"></td>
+              <td>${r.name || '—'}</td>
+              <td>${r.dni || '—'}</td>
+              <td>${r.email || '—'}</td>
+              <td>${r.esp || '—'}</td>
+              <td><span class="status-badge ${r.category === 'approved' ? 'status-approved' : 'status-rejected'}">
+                    ${r.category === 'approved' ? 'Aprobada por IA' : 'Rechazada por IA'}
+                  </span></td>
+              <td><span class="status-badge ${r.suneduStatus === 'Enviado' ? 'status-approved' : 'status-pending'}">
+                    ${r.suneduStatus || 'Pendiente'}
+                  </span></td>
+              <td><button class="btn ghost viewBtn" data-kind="approved" data-index="${i}" type="button">Ver</button></td>
+            </tr>`).join('');
+        } else if (kind === 'rejected') {
+          tb.innerHTML = rows.map((r, i) => `
+            <tr>
+              <td>${r.name || '—'}</td>
+              <td>${r.dni || '—'}</td>
+              <td>${r.email || '—'}</td>
+              <td>${r.esp || '—'}</td>
+              <td>${(r.issues && r.issues.join(' | ')) || '—'}</td>
+              <td><button class="btn ghost viewBtn" data-kind="rejected" data-index="${i}" type="button">Ver</button></td>
+            </tr>`).join('');
+        } else if (kind === 'sunedu') {
+          tb.innerHTML = rows.map((r, i) => `
+            <tr>
+              <td><input type="checkbox" data-dni="${r.dni || ''}"></td>
+              <td>${r.codigo || r.code || '—'}</td>
+              <td>${r.name || '—'}</td>
+              <td>${r.dni || '—'}</td>
+              <td><span class="status-badge ${r.suneduStatus === 'Enviado' ? 'status-approved' : 'status-pending'}">
+                    ${r.suneduStatus || 'Pendiente'}
+                  </span></td>
+              <td>${r.updatedAt ? new Date(r.updatedAt).toLocaleString('es-PE') : '—'}</td>
+              <td><button class="btn ghost viewBtn" data-kind="sunedu" data-index="${i}" type="button">Ver</button></td>
+            </tr>`).join('');
+        }
+
+        tb.querySelectorAll('.viewBtn').forEach(btn => {
+          const kindBtn = btn.dataset.kind;
+          const idx = parseInt(btn.dataset.index, 10);
+          btn.addEventListener('click', () => {
+            const srcArr = datasets[kindBtn] || [];
+            const row = srcArr[idx];
+            if (row) openDrawer(kindBtn, row);
+          });
+        });
+      }
+
+      async function loadAdminData() {
+        try {
+          const r = await fetch('/api/admin/submissions');
+          const ct = r.headers.get('content-type') || '';
+          let j;
+          if (ct.includes('application/json')) {
+            j = await r.json();
+          } else {
+            const text = await r.text();
+            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+          }
+
+          if (!r.ok || !j.ok) {
+            throw new Error(j.error || 'No se pudo cargar datos');
+          }
+
+          const approved = j.data?.approved || [];
+          const rejected = j.data?.rejected || [];
+
+          const sunedu = approved.map((r, i) => ({
+            ...r,
+            codigo: r.code || r.codigo || ('A' + (i + 1))
+          }));
+
+          const datasets = { approved, rejected, sunedu };
+
+          renderTable('approvedRows', approved, 'approved', datasets);
+          document.getElementById('countApproved').textContent = `${approved.length} resultado(s)`;
+
+          renderTable('rejectedRows', rejected, 'rejected', datasets);
+          document.getElementById('countRejected').textContent = `${rejected.length} resultado(s)`;
+
+          renderTable('suneduRows', sunedu, 'sunedu', datasets);
+          document.getElementById('countSunedu').textContent = `${sunedu.length} aprobado(s)`;
+        } catch (e) {
+          toast('No se pudo cargar datos admin', true);
+          console.warn(e);
+        }
+      }
+
+      async function generateZipForApproved() {
+        try {
+          const tbody = document.getElementById('approvedRows');
+          const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
+          const dniList = boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
+
+          const body = { dniList };
+
+          const r = await fetch('/api/admin/generate-zip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          const ct = r.headers.get('content-type') || '';
+          let j;
+          if (ct.includes('application/json')) {
+            j = await r.json();
+          } else {
+            const text = await r.text();
+            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+          }
+
+          if (!r.ok || !j.ok) {
+            throw new Error(j.error || 'No se pudo generar el ZIP');
+          }
+
+          toast(`ZIP generado con ${j.total} estudiante(s)`, false);
+
+          if (j.url) {
+            const a = document.createElement('a');
+            a.href = j.url;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+        } catch (err) {
+          console.error(err);
+          toast(err.message || 'Error generando ZIP', true);
+        }
+      }
+
+      async function deleteByDniList(dniList) {
+        try {
+          if (!dniList.length) {
+            toast('Selecciona al menos un estudiante', true);
+            return;
+          }
+          if (!confirm('¿Eliminar las solicitudes seleccionadas? Esta acción no se puede deshacer.')) {
+            return;
+          }
+
+          const r = await fetch('/api/admin/delete-submissions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dniList })
+          });
+
+          const ct = r.headers.get('content-type') || '';
+          let j;
+          if (ct.includes('application/json')) {
+            j = await r.json();
+          } else {
+            const text = await r.text();
+            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+          }
+
+          if (!r.ok || !j.ok) {
+            throw new Error(j.error || 'No se pudo eliminar');
+          }
+
+          toast(`Se eliminaron ${j.deleted} registro(s).`, false);
+          await loadAdminData();
+        } catch (err) {
+          console.error(err);
+          toast(err.message || 'Error eliminando registros', true);
+        }
+      }
+
+      function collectDniFromTable(tbodyId) {
+        const tbody = document.getElementById(tbodyId);
+        const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
+        return boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
+      }
+
+      // buttons
+      document.getElementById('exportCSV').addEventListener('click', () => toast('Export CSV (demo)', false));
+      document.getElementById('btnZip').addEventListener('click', generateZipForApproved);
+      document.getElementById('btnMarkSent').addEventListener('click', () => toast('Marcadas como enviadas (demo)', false));
+      document.getElementById('btnZipSunedu').addEventListener('click', generateZipForApproved); // reuse same ZIP logic
+      document.getElementById('btnMarkSentSunedu').addEventListener('click', () => toast('Marcadas (SUNEDU) enviadas (demo)', false));
+
+      document.getElementById('btnDelete').addEventListener('click', () => {
+        const dniList = collectDniFromTable('approvedRows');
+        deleteByDniList(dniList);
+      });
+
+      document.getElementById('btnDeleteSunedu').addEventListener('click', () => {
+        const dniList = collectDniFromTable('suneduRows');
+        deleteByDniList(dniList);
+      });
+
+      loadAdminData();
+    })();
+  </script>
+</body>
+
+</html>

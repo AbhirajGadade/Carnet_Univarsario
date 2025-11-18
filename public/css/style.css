@@ -1,0 +1,733 @@
+:root {
+    --bg: #f6f7fb;
+    --text: #0f172a;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --soft: #e5e7eb;
+    --ring: #bfdbfe;
+    --outline: #93c5fd;
+    --shadow: 0 20px 60px rgba(15, 23, 42, .12);
+    --primary: #2563eb;
+    --primary-2: #1d4ed8;
+    --good: #16a34a;
+    --warn: #f59e0b;
+    --bad: #e11d48;
+    --info: #0ea5e9;
+    --dark: #0f172a;
+
+    /* ⬇️ Added: image variables with the correct relative paths from /public/css/style.css */
+    --logo-img: url('../assets/images/logo-pdf.png');
+    --login-bg-img: url('../assets/images/bg-login.jpg');
+}
+
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(1200px 700px at 10% -10%, #dbeafe 0%, #f6f7fb 60%, #f6f7fb 100%);
+    color: var(--text);
+    font: 15px/1.55 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 24px auto;
+    padding: 0 16px
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, .7));
+    border: 1px solid #e6eaf3;
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow)
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+/* ⬇️ Your logo block now paints the UMA image file */
+.logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+
+    /* Added: show the real logo file */
+    background-image: var(--logo-img);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 22px 22px;
+    /* tweak if you want larger/smaller */
+}
+
+.logo svg {
+    width: 22px;
+    height: 22px;
+    color: #1d4ed8
+}
+
+/* harmless if you still keep an SVG fallback */
+
+.card {
+    background: var(--card);
+    border: 1px solid #e6eaf3;
+    border-radius: 16px;
+    box-shadow: var(--shadow)
+}
+
+.pad {
+    padding: 16px
+}
+
+.muted {
+    color: var(--muted)
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    border: 1px solid #e6eaf3;
+    background: #f8fafc
+}
+
+.pill.good {
+    color: #065f46;
+    background: #ecfdf5;
+    border-color: #a7f3d0
+}
+
+.pill.warn {
+    color: #7c2d12;
+    background: #fffbeb;
+    border-color: #fcd34d
+}
+
+.pill.bad {
+    color: #7f1d1d;
+    background: #fef2f2;
+    border-color: #fecaca
+}
+
+.pill.info {
+    color: #164e63;
+    background: #ecfeff;
+    border-color: #a5f3fc
+}
+
+/* layout */
+.app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px
+}
+
+@media(max-width:1000px) {
+    .app {
+        grid-template-columns: 1fr
+    }
+}
+
+.nav {
+    padding: 10px
+}
+
+.link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #0f172a;
+    border: 1px solid transparent;
+    cursor: pointer
+}
+
+.link:hover {
+    background: #f8fafc;
+    border-color: #e5e7eb
+}
+
+.link.active {
+    outline: 3px solid var(--ring);
+    border-color: var(--outline);
+    background: #eff6ff
+}
+
+.link svg {
+    width: 18px;
+    height: 18px;
+    color: #1d4ed8
+}
+
+.screen {
+    display: none
+}
+
+.screen.active {
+    display: block
+}
+
+/* forms/buttons */
+.title {
+    margin: 0 0 8px;
+    font-size: 18px
+}
+
+.field {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px
+}
+
+label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151
+}
+
+.input,
+select {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 11px;
+    outline: none
+}
+
+.input:focus,
+select:focus {
+    border-color: #bfdbfe;
+    outline: 3px solid var(--ring)
+}
+
+.btn {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #1d4ed8;
+    background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, .25)
+}
+
+.btn.secondary {
+    background: #fff;
+    color: #1d4ed8;
+    border-color: #bfdbfe
+}
+
+.btn.ghost {
+    background: #fff;
+    border-color: #e5e7eb;
+    color: #0f172a
+}
+
+.btn:disabled {
+    opacity: .6;
+    cursor: not-allowed
+}
+
+.btnRow {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap
+}
+
+/* stepper */
+.stepper {
+    display: grid;
+    gap: 8px
+}
+
+.step {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid #e6eaf3;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff
+}
+
+.step .num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    color: #1d4ed8;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe
+}
+
+.step.done {
+    background: #f7fee7;
+    border-color: #d9f99d
+}
+
+.step.done .num {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534
+}
+
+/* tables */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px
+}
+
+thead th {
+    padding: 8px 10px;
+    text-align: left;
+    color: #475569;
+    font-size: 12px
+}
+
+tbody tr {
+    background: #fff;
+    border: 1px solid #e6eaf3
+}
+
+tbody td {
+    padding: 10px 10px;
+    border-top: 1px solid #eef2f7;
+    border-bottom: 1px solid #eef2f7;
+    vertical-align: middle
+}
+
+tbody td:first-child {
+    border-left: 1px solid #eef2f7;
+    border-radius: 10px 0 0 10px
+}
+
+tbody td:last-child {
+    border-right: 1px solid #eef2f7;
+    border-radius: 0 10px 10px 0
+}
+
+/* grids used in student portal */
+.grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 18px
+}
+
+@media (max-width: 1000px) {
+    .grid {
+        grid-template-columns: 1fr
+    }
+}
+
+/* uploader (student) */
+.upload {
+    border: 2px dashed #c7d2fe;
+    background: #eef2ff;
+    padding: 16px;
+    border-radius: 14px;
+    text-align: center
+}
+
+.upload.dragover {
+    background: #e0e7ff
+}
+
+.preview {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    margin-top: 12px;
+    align-items: center
+}
+
+@media (max-width:560px) {
+    .preview {
+        grid-template-columns: 1fr
+    }
+}
+
+.preview img {
+    width: 120px;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff
+}
+
+.checks {
+    display: grid;
+    gap: 6px
+}
+
+.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    border: 1px solid #cbd5e1
+}
+
+.dot.ok {
+    background: #22c55e;
+    border-color: #86efac
+}
+
+.dot.warn {
+    background: #f59e0b;
+    border-color: #fcd34d
+}
+
+.dot.bad {
+    background: #e11d48;
+    border-color: #fecdd3
+}
+
+/* ===========================
+   ID card (student) — COMPACT
+   =========================== */
+.idwrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    place-items: center
+}
+
+.idcard {
+    width: 340px;
+    height: 210px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0b1226;
+    color: #e5e7eb;
+    border: 1px solid #243b72;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .25);
+    display: grid;
+    grid-template-columns: 110px 1fr;
+}
+
+.idleft {
+    background: linear-gradient(180deg, #1e40af, #0ea5e9);
+    padding: 14px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+}
+
+.idleft .ph {
+    width: 82px;
+    height: 110px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, .6)
+}
+
+.idleft img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+}
+
+/* ↓↓↓ Compact typography and spacing ↓↓↓ */
+.idright {
+    padding: 10px 12px;
+    display: grid;
+    gap: 6px;
+    grid-auto-rows: min-content
+}
+
+.idtitle {
+    font-weight: 800;
+    letter-spacing: .5px;
+    font-size: 13px
+}
+
+.idrow {
+    display: flex;
+    gap: 8px;
+    align-items: center
+}
+
+.idlabel {
+    width: 72px;
+    color: #93c5fd;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em
+}
+
+.idrow>div:not(.idlabel) {
+    font-size: 12px;
+    line-height: 1.2;
+    word-break: break-word
+}
+
+.qr {
+    width: 56px;
+    height: 56px;
+    background: repeating-linear-gradient(45deg, #fff 0 6px, #000 6px 12px);
+    border-radius: 6px;
+    border: 1px solid #111
+}
+
+/* ↑↑↑ Compact typography and spacing ↑↑↑ */
+
+.printArea {
+    display: grid;
+    gap: 10px;
+    justify-items: center
+}
+
+@media print {
+    body {
+        background: #fff
+    }
+
+    .header,
+    .nav,
+    .controls,
+    .no-print {
+        display: none !important
+    }
+
+    .idcard {
+        box-shadow: none;
+        border: 1px solid #000
+    }
+}
+
+/* admin-only */
+.section {
+    font-weight: 800;
+    font-size: 12px;
+    color: #475569;
+    letter-spacing: .06em;
+    margin: 8px 8px 6px
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px
+}
+
+.tab {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 700
+}
+
+.tab[aria-selected="true"] {
+    outline: 3px solid var(--ring);
+    border-color: var(--outline);
+    background: #eff6ff
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px
+}
+
+@media(max-width:1100px) {
+    .board {
+        grid-template-columns: repeat(2, 1fr)
+    }
+}
+
+@media(max-width:700px) {
+    .board {
+        grid-template-columns: 1fr
+    }
+}
+
+.col {
+    background: #fff;
+    border: 1px solid #e6eaf3;
+    border-radius: 12px;
+    padding: 10px
+}
+
+.col h4 {
+    margin: 4px 0 8px
+}
+
+.cardItem {
+    background: #f8fafc;
+    border: 1px solid #e6eaf3;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin: 8px 0;
+    cursor: grab
+}
+
+.tiny {
+    font-size: 12px;
+    color: #64748b
+}
+
+.drawer {
+    position: fixed;
+    inset: 0;
+    display: none;
+    background: rgba(0, 0, 0, .45);
+    z-index: 50
+}
+
+.drawer.open {
+    display: block
+}
+
+.panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(520px, 96vw);
+    height: 100%;
+    background: #fff;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, .2);
+    border-left: 1px solid #e6eaf3;
+    display: grid;
+    grid-template-rows: auto 1fr auto
+}
+
+.panel header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f7
+}
+
+.panel main {
+    padding: 14px;
+    overflow: auto
+}
+
+.panel footer {
+    padding: 12px 14px;
+    border-top: 1px solid #eef2f7;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap
+}
+
+.photo {
+    width: 160px;
+    height: 210px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(45deg, #e2e8f0, #f8fafc);
+    border: 1px solid #e5e7eb
+}
+
+.photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+}
+
+.kv {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    margin-top: 8px
+}
+
+.kv .k {
+    color: #6b7280;
+    font-size: 12px
+}
+
+.pillRow {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap
+}
+
+#toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    display: grid;
+    gap: 8px;
+    z-index: 60
+}
+
+.toast {
+    background: var(--dark);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid #1f2937
+}
+
+/* login page */
+.login-only .loginWrap {
+    max-width: 900px;
+    margin: 60px auto
+}
+
+/* ⬇️ Updated: layer your bg image behind the gradient */
+.heroBlock {
+    background:
+        linear-gradient(180deg, #1d4ed8, #1e40af),
+        var(--login-bg-img);
+    background-size: cover, cover;
+    background-position: center, center;
+    color: #fff;
+    border-radius: 16px;
+    padding: 20px
+}
+
+.split {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 18px
+}
+
+@media(max-width:900px) {
+    .split {
+        grid-template-columns: 1fr
+    }
+}

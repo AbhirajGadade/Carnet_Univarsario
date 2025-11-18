@@ -1,0 +1,52 @@
+{
+  "submissions": [
+    {
+      "dni": "47892916",
+      "code": "142096",
+      "name": "LIZBETH AURORA VASQUEZ BARBOZA",
+      "email": "lizbeth.vasquez@uma.edu.pe",
+      "esp": "ENFERMERÍA",
+      "category": "approved",
+      "ok": true,
+      "photoUrl": "/photos/approved/47892916.jpg",
+      "filename": "47892916.jpg",
+      "issues": [],
+      "updatedAt": "2025-11-18T20:48:48.299Z",
+      "createdAt": "2025-11-17T21:57:13.836Z",
+      "suneduStatus": "Pendiente",
+      "relative_path": "photos\\approved\\47892916.jpg"
+    },
+    {
+      "dni": "41275605",
+      "code": "181272",
+      "name": "LIZ MARIA LOPEZ BURGOS",
+      "email": "liz.lopez@uma.edu.pe",
+      "esp": "FARMACIA Y BIOQUÍMICA",
+      "category": "approved",
+      "ok": true,
+      "photoUrl": "/photos/approved/41275605.jpg",
+      "filename": "41275605.jpg",
+      "relative_path": "photos\\approved\\41275605.jpg",
+      "issues": [],
+      "updatedAt": "2025-11-18T15:38:45.597Z",
+      "createdAt": "2025-11-18T15:38:29.357Z",
+      "suneduStatus": "Pendiente"
+    },
+    {
+      "dni": "75488765",
+      "code": "182028",
+      "name": "PEDRO YORLAN CACERES GARCIA",
+      "email": "pedro.caceres@uma.edu.pe",
+      "esp": "PHARMACY AND BIOCHEMISTRY",
+      "category": "approved",
+      "ok": true,
+      "photoUrl": "/photos/approved/75488765.jpg",
+      "filename": "75488765.jpg",
+      "relative_path": "photos\\approved\\75488765.jpg",
+      "issues": [],
+      "updatedAt": "2025-11-18T17:17:20.555Z",
+      "createdAt": "2025-11-18T16:45:53.225Z",
+      "suneduStatus": "Pendiente"
+    }
+  ]
+}

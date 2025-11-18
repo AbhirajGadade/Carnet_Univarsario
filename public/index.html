@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UMA — Iniciar sesión</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink: #f02454;
+            --pink-2: #ff6a8f;
+            --ring: #ffd3dd;
+            --outline: #ffc2d0;
+            --text: #0f172a;
+            --muted: #6b7280;
+            --card: #ffffff;
+            --login-bg: url('assets/images/bg-login.jpg')
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font: 15px/1.55 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background: #fff;
+            color: var(--text)
+        }
+
+        .wrap {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.1fr 1fr
+        }
+
+        @media (max-width:980px) {
+            .wrap {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .welcome {
+            color: #fff;
+            display: grid;
+            align-content: center;
+            gap: 24px;
+            padding: 48px 48px 64px;
+            background: linear-gradient(135deg, rgba(240, 36, 84, .88), rgba(255, 106, 143, .88)), var(--login-bg);
+            background-size: cover;
+            background-position: center
+        }
+
+        .welcome h1 {
+            margin: 0;
+            font-size: 42px;
+            line-height: 1.05
+        }
+
+        .roles {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .roleBtn {
+            border: 1.5px solid #ffffff99;
+            background: transparent;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-weight: 800;
+            cursor: pointer
+        }
+
+        .roleBtn[aria-pressed="true"] {
+            background: #ffffff1f;
+            border-color: #fff
+        }
+
+        .panel {
+            display: grid;
+            align-content: center;
+            padding: 40px;
+            background: #fff
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: #111827
+        }
+
+        .brandImg {
+            height: 36px
+        }
+
+        .brandTitle {
+            font-weight: 800
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid #eef2f7;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, .08);
+            max-width: 520px
+        }
+
+        .title {
+            margin: 0 0 12px;
+            font-size: 32px;
+            line-height: 1.1
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 12px
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 800;
+            color: #374151;
+            letter-spacing: .03em
+        }
+
+        .input {
+            width: 100%;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            outline: none
+        }
+
+        .input:focus {
+            border-color: var(--outline);
+            outline: 3px solid var(--ring)
+        }
+
+        .pwdWrap {
+            position: relative
+        }
+
+        .togglePwd {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: #fff;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 8px
+        }
+
+        .btn {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--pink);
+            background: linear-gradient(180deg, var(--pink-2), var(--pink));
+            color: #fff;
+            font-weight: 900;
+            box-shadow: 0 10px 24px rgba(240, 36, 84, .25);
+            width: 100%;
+            font-size: 16px
+        }
+
+        .btn[disabled] {
+            opacity: .6;
+            cursor: not-allowed
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        #msg {
+            min-height: 1.2em;
+            margin-top: 8px
+        }
+    </style>
+</head>
+
+<body>
+    <main class="wrap">
+        <section class="welcome">
+            <h1>Bienvenido!</h1>
+            <div class="roles" role="tablist" aria-label="Seleccionar rol">
+                <button type="button" id="btnStudent" class="roleBtn" aria-pressed="true"
+                    data-role="student">Estudiante</button>
+                <button type="button" id="btnAdmin" class="roleBtn" aria-pressed="false"
+                    data-role="admin">Administrador</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="brand">
+                <img src="assets/images/logo-pdf.png" alt="UMA" class="brandImg">
+                <div class="brandTitle">Carné Universario</div>
+            </div>
+
+            <form class="card" id="loginForm" novalidate>
+                <h2 class="title">Iniciar sesión</h2>
+                <input type="hidden" id="role" value="student" />
+
+                <div class="field">
+                    <label id="lblUser" for="userInput">Código</label>
+                    <input class="input" id="userInput" inputmode="numeric" placeholder="Tu código UMA" required>
+                </div>
+
+                <div class="field pwdWrap">
+                    <label id="lblPwd" for="password">DNI</label>
+                    <input class="input" id="password" type="password" placeholder="Tu DNI" required>
+                    <button type="button" class="togglePwd" id="togglePwd">Mostrar</button>
+                </div>
+
+                <button class="btn" id="submitBtn" type="submit">Ingresar</button>
+
+                <p class="muted" id="help-stu" style="margin:10px 0 0">
+                    Estudiante: usa tu <b>código</b> y tu <b>DNI</b>.
+                </p>
+                <p class="muted" id="help-adm" style="margin:10px 0 0; display:none">
+                    Administrador: usa tu <b>email</b> y <b>contraseña</b>.
+                </p>
+                <div id="msg" class="muted"></div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const T_STU = 'uma_token_student';
+            const T_ADM = 'uma_token_admin';
+            const CKEY = 'uma_codigo';
+
+            const roleInput = document.getElementById('role');
+            const btnStudent = document.getElementById('btnStudent');
+            const btnAdmin = document.getElementById('btnAdmin');
+            const lblUser = document.getElementById('lblUser');
+            const lblPwd = document.getElementById('lblPwd');
+            const userInput = document.getElementById('userInput');
+            const pwdInput = document.getElementById('password');
+
+            function selectRole(r) {
+                const isStu = r === 'student';
+                roleInput.value = r;
+                btnStudent.setAttribute('aria-pressed', isStu ? 'true' : 'false');
+                btnAdmin.setAttribute('aria-pressed', isStu ? 'false' : 'true');
+                if (isStu) {
+                    lblUser.textContent = 'Código';
+                    userInput.type = 'text';
+                    userInput.placeholder = 'Tu código UMA';
+                    userInput.setAttribute('inputmode', 'numeric');
+                    lblPwd.textContent = 'DNI';
+                    pwdInput.placeholder = 'Tu DNI';
+                    document.getElementById('help-stu').style.display = '';
+                    document.getElementById('help-adm').style.display = 'none';
+                } else {
+                    lblUser.textContent = 'Email';
+                    userInput.type = 'email';
+                    userInput.placeholder = 'tu.correo@uma.edu.pe';
+                    userInput.removeAttribute('inputmode');
+                    lblPwd.textContent = 'Contraseña';
+                    pwdInput.placeholder = 'Tu contraseña';
+                    document.getElementById('help-stu').style.display = 'none';
+                    document.getElementById('help-adm').style.display = '';
+                }
+            }
+
+            btnStudent.addEventListener('click', () => selectRole('student'));
+            btnAdmin.addEventListener('click', () => selectRole('admin'));
+            selectRole('student');
+
+            document.getElementById('togglePwd').addEventListener('click', () => {
+                const t = pwdInput.type === 'password' ? 'text' : 'password';
+                pwdInput.type = t;
+                document.getElementById('togglePwd').textContent =
+                    t === 'password' ? 'Mostrar' : 'Ocultar';
+            });
+
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const role = roleInput.value;
+                const u = userInput.value.trim();
+                const p = pwdInput.value.trim();
+                const msg = document.getElementById('msg');
+
+                try {
+                    document.getElementById('submitBtn').disabled = true;
+                    msg.textContent = '';
+
+                    if (role === 'student') {
+                        const r = await fetch('/api/student/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ codigo: String(u), dni: String(p) })
+                        });
+                        const j = await r.json();
+                        if (!j.ok) {
+                            throw new Error(j.error?.message || JSON.stringify(j.error) || 'No autorizado');
+                        }
+
+                        localStorage.setItem(T_STU, '1');
+                        localStorage.setItem(CKEY, String(u));
+                        localStorage.setItem('uma_session_role', 'student');
+                        localStorage.setItem('uma_session_email', `${u}@uma.edu.pe`);
+                        location.replace('student.html?code=' + encodeURIComponent(u));
+                    } else {
+                        if (!u || !p) throw new Error('Email y contraseña requeridos');
+
+                        const r = await fetch('/api/admin/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ email: u, password: p })
+                        });
+                        const j = await r.json();
+                        if (!j.ok) {
+                            throw new Error(j.error?.message || JSON.stringify(j.error) || 'No autorizado');
+                        }
+
+                        localStorage.setItem(T_ADM, '1');
+                        localStorage.setItem('uma_session_role', 'admin');
+                        localStorage.setItem('uma_session_email', u);
+                        location.replace('admin.html');
+                    }
+                } catch (err) {
+                    msg.textContent = err.message || 'No se pudo iniciar sesión.';
+                } finally {
+                    document.getElementById('submitBtn').disabled = false;
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>
