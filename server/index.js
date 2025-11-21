@@ -11,7 +11,9 @@ const cors = require('cors');
 const multer = require('multer');
 const FormData = require('form-data');
 const axios = require('axios');
-const archiver = require('archiver');
+
+// helper that builds rich SUNEDU ZIPs
+const { createAdminZip } = require('./adminZipHelper');
 
 const {
   studentLogin,
@@ -42,6 +44,12 @@ const ROOT_DIR = path.join(__dirname, '..');
 // IMPORTANT: Python validator writes here: photo/photos/{approved|rejected}
 const PHOTOS_ROOT = path.join(ROOT_DIR, 'photo', 'photos');
 const SUBMISSIONS_PATH = path.join(ROOT_DIR, 'photo', 'submissions.json');
+
+// directory for generated SUNEDU ZIP files
+const ZIP_OUTPUT_DIR = path.join(ROOT_DIR, 'tmp_zips');
+if (!fs.existsSync(ZIP_OUTPUT_DIR)) {
+  fs.mkdirSync(ZIP_OUTPUT_DIR, { recursive: true });
+}
 
 // ---------- submissions helpers ----------
 async function loadSubmissions() {
@@ -122,7 +130,8 @@ app.use(
 
 // static assets
 app.use(express.static(path.join(ROOT_DIR, 'public')));
-app.use('/photos', express.static(PHOTOS_ROOT));
+app.use('/photos', express.static(PHOTOS_ROOT));     // existing photos
+app.use('/downloads', express.static(ZIP_OUTPUT_DIR)); // SUNEDU ZIPs
 
 // ---------- STUDENT LOGIN ----------
 app.post('/api/student/login', async (req, res) => {
@@ -344,6 +353,8 @@ app.post('/validate', upload.single('image'), async (req, res) => {
         filename,
         relative_path: relPath,
         issues: Array.isArray(data.issues) ? data.issues : [],
+        data_url: data.data_url || null,
+        supabase_url: data.supabase_url || null,
         updatedAt: now
       };
 
@@ -384,7 +395,7 @@ app.get('/api/admin/submissions', async (_req, res) => {
   }
 });
 
-// ---------- ADMIN: generate ZIP (one folder per student) ----------
+// ---------- ADMIN: generate ZIP (rich SUNEDU package) ----------
 app.post('/api/admin/generate-zip', async (req, res) => {
   try {
     const { dniList } = req.body || {};
@@ -393,7 +404,8 @@ app.post('/api/admin/generate-zip', async (req, res) => {
 
     // If admin selected specific DNIs, filter for only those
     if (Array.isArray(dniList) && dniList.length) {
-      selected = selected.filter((s) => s.dni && dniList.includes(s.dni));
+      const dniSet = new Set(dniList.map(String));
+      selected = selected.filter((s) => s.dni && dniSet.has(String(s.dni)));
     }
 
     console.log('[zip] approved in JSON:', list.filter(s => s.category === 'approved').length);
@@ -405,72 +417,19 @@ app.post('/api/admin/generate-zip', async (req, res) => {
         .json({ ok: false, error: 'No hay estudiantes seleccionados.' });
     }
 
-    const packagesDir = path.join(PHOTOS_ROOT, 'packages');
-    await fsp.mkdir(packagesDir, { recursive: true });
-
-    const zipName = `paquetes_${Date.now()}.zip`;
-    const zipFullPath = path.join(packagesDir, zipName);
-    const publicUrl = `/photos/packages/${zipName}`;
-
-    const output = fs.createWriteStream(zipFullPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
-
-    let responded = false;
-
-    output.on('close', () => {
-      console.log('[zip] created', zipFullPath, 'bytes:', archive.pointer());
-      if (!responded) {
-        responded = true;
-        res.json({ ok: true, url: publicUrl, total: selected.length });
-      }
+    const { zipPath, total, fileName } = await createAdminZip(selected, {
+      outDir: ZIP_OUTPUT_DIR
     });
 
-    archive.on('error', (err) => {
-      console.error('[zip] error:', err);
-      if (!responded) {
-        responded = true;
-        res.status(500).json({ ok: false, error: 'ZIP error: ' + err.message });
-      }
+    const publicUrl = `/downloads/${fileName}`;
+
+    return res.json({
+      ok: true,
+      url: publicUrl,
+      total,
+      zipPath,
+      file: fileName
     });
-
-    archive.pipe(output);
-
-    // One folder per student
-    for (const s of selected) {
-      const absPath = findApprovedPhotoByDni(s.dni);
-      if (!absPath) {
-        console.warn(
-          '[zip] NO PHOTO for DNI',
-          s.dni,
-          'expected at',
-          path.join(PHOTOS_ROOT, 'approved', `${s.dni}.jpg`)
-        );
-        continue;
-      }
-
-      // 1) add photo as <dni>/photo.jpg
-      const photoNameInZip = `${s.dni}/photo.jpg`;
-      console.log('[zip] add photo', absPath, 'as', photoNameInZip);
-      archive.file(absPath, { name: photoNameInZip });
-
-      // 2) add small JSON metadata as <dni>/info.json
-      const info = {
-        dni: s.dni,
-        codigo: s.code || '',
-        nombre: s.name || '',
-        email: s.email || '',
-        especialidad: s.esp || '',
-        categoria: s.category || 'approved',
-        suneduStatus: s.suneduStatus || 'Pendiente',
-        updatedAt: s.updatedAt
-      };
-      const jsonText = JSON.stringify(info, null, 2);
-      const infoNameInZip = `${s.dni}/info.json`;
-      console.log('[zip] add info.json for', s.dni);
-      archive.append(jsonText, { name: infoNameInZip });
-    }
-
-    archive.finalize();
   } catch (err) {
     console.error('[zip] unexpected error:', err);
     res.status(500).json({ ok: false, error: err.message });
@@ -510,4 +469,5 @@ app.listen(PORT, () => {
   console.log(`UMA proxy running on port ${PORT}`);
   console.log(`Validator URL configured as: ${VALIDATOR_URL}`);
   console.log(`PHOTOS_ROOT: ${PHOTOS_ROOT}`);
+  console.log(`ZIP_OUTPUT_DIR: ${ZIP_OUTPUT_DIR}`);
 });

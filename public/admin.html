@@ -58,24 +58,20 @@
       height: 36px;
     }
 
-    .pill {
+    /* student-like session chip */
+    .session-chip {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 6px 14px;
+      padding: 8px 18px;
       border-radius: 999px;
-      border: 1px solid var(--outline);
       background: #f3f4f6;
+      font-size: 14px;
       color: #111827;
+      white-space: nowrap;
     }
 
-    .pill.info {
-      background: #f3f4f6;
-    }
-
-    .pill-icon {
+    .session-icon {
       width: 22px;
       height: 22px;
       border-radius: 999px;
@@ -85,6 +81,31 @@
       justify-content: center;
       color: #ffffff;
       font-size: 12px;
+    }
+
+    .session-icon span {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--outline);
+      background: #fff;
+    }
+
+    .pill.info {
+      color: #a31231;
+      background: #fff5f7;
     }
 
     .app {
@@ -377,6 +398,7 @@
 
     .drawer-value {
       font-size: 13px;
+      word-break: break-all;
     }
 
     .closeBtn {
@@ -400,10 +422,9 @@
           <div class="muted">Gestión de solicitudes y fotos</div>
         </div>
       </div>
-      <!-- pill now matches "Connected: xxxx" style -->
-      <div id="session" class="pill info">
-        <span class="pill-icon">👤</span>
-        <span>Connected</span>
+      <div class="session-chip" id="sessionChip">
+        <div class="session-icon"><span></span></div>
+        <span>Conectado</span>
       </div>
     </div>
 
@@ -447,7 +468,7 @@
                 <th>DNI</th>
                 <th>Email</th>
                 <th>Especialidad</th>
-                <th>Foto</th> <!-- nueva columna URL foto Supabase -->
+                <th>Foto (URL)</th>
                 <th>IA</th>
                 <th></th>
               </tr>
@@ -539,6 +560,7 @@
         <div><span class="drawer-label">DNI</span><div id="dDni" class="drawer-value">—</div></div>
         <div><span class="drawer-label">Email</span><div id="dEmail" class="drawer-value">—</div></div>
         <div><span class="drawer-label">Especialidad</span><div id="dEsp" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">URL Supabase</span><div id="dSupabase" class="drawer-value">—</div></div>
       </div>
     </main>
     <footer>
@@ -550,7 +572,6 @@
   <script>
     (function () {
       const TOKEN_KEY = 'uma_token_admin';
-      // datasets global para exportar/usar en tablas
       let datasets = { approved: [], rejected: [], sunedu: [] };
 
       function toast(m, err) {
@@ -563,23 +584,16 @@
 
       // ---- guard ----
       (function guard() {
-        const sessionEl = document.getElementById('session');
         const role = localStorage.getItem('uma_session_role');
         const email = localStorage.getItem('uma_session_email') || 'admin';
+        const chip = document.getElementById('sessionChip');
+        const span = chip.querySelector('span');
 
         if (role !== 'admin' || !localStorage.getItem(TOKEN_KEY)) {
-          sessionEl.innerHTML = `
-            <span class="pill-icon">👤</span>
-            <span>Connected (demo)</span>
-          `;
+          span.textContent = 'Modo demo admin';
           return;
         }
-
-        // Real admin session
-        sessionEl.innerHTML = `
-          <span class="pill-icon">👤</span>
-          <span>Connected: ${email}</span>
-        `;
+        span.textContent = `Conectado: ${email}`;
       })();
 
       function goto(hash) {
@@ -614,6 +628,7 @@
       const dEsp = document.getElementById('dEsp');
       const dUpdated = document.getElementById('dUpdated');
       const dCode = document.getElementById('dCode');
+      const dSupabase = document.getElementById('dSupabase');
 
       document.getElementById('closeDrawer').addEventListener('click', () => drawer.classList.remove('open'));
       document.getElementById('dGenerate').addEventListener('click', () => toast('Paquete generado (demo: usa el botón principal)', false));
@@ -622,11 +637,7 @@
       function openDrawer(kind, row) {
         dTitle.textContent = row.name || 'Estudiante';
         dSub.textContent = kind === 'rejected' ? 'Solicitud rechazada' : 'Solicitud aprobada';
-
-        const photoUrl = row.supabase_url || row.photoUrl || row.http_url || '';
-        dPhoto.src = photoUrl || '';
-        dPhoto.style.display = photoUrl ? 'block' : 'none';
-
+        dPhoto.src = row.photoUrl || row.supabase_url || '';
         const ok = row.category === 'approved';
 
         dAI.textContent = ok ? 'Aprobada por IA' : 'Rechazada por IA';
@@ -642,6 +653,12 @@
         dEmail.textContent = row.email || '—';
         dEsp.textContent = row.esp || '—';
         dUpdated.textContent = row.updatedAt ? new Date(row.updatedAt).toLocaleString('es-PE') : '—';
+
+        if (row.supabase_url) {
+          dSupabase.innerHTML = `<a href="${row.supabase_url}" target="_blank" rel="noopener">Abrir foto</a>`;
+        } else {
+          dSupabase.textContent = '—';
+        }
 
         drawer.classList.add('open');
       }
@@ -667,10 +684,8 @@
         if (kind === 'approved') {
           tb.innerHTML = rows.map((r, i) => {
             const iaOk = r.category === 'approved';
-            const photoUrl = r.supabase_url || r.photoUrl || r.http_url || '';
-            const photoCell = photoUrl
-              ? `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer">Ver foto</a>`
-              : '—';
+            const url = r.supabase_url || r.photoUrl || '';
+            const link = url ? `<a href="${url}" target="_blank" rel="noopener">Abrir</a>` : '—';
 
             return `
             <tr>
@@ -680,7 +695,7 @@
               <td>${r.dni || '—'}</td>
               <td>${r.email || '—'}</td>
               <td>${r.esp || '—'}</td>
-              <td>${photoCell}</td>
+              <td>${link}</td>
               <td><span class="status-badge ${iaOk ? 'status-approved' : 'status-rejected'}">
                     ${iaOk ? 'Aprobada por IA' : 'Rechazada por IA'}
                   </span></td>
@@ -857,21 +872,19 @@
           return;
         }
 
-        const header = ['Estudiante', 'Código', 'DNI', 'Email', 'Especialidad', 'FotoURL', 'IA'];
+        const header = ['Estudiante', 'Código', 'DNI', 'Email', 'Especialidad', 'IA'];
         const csvLines = [];
         csvLines.push(header.join(','));
 
         rows.forEach(r => {
           const ia = r.category === 'approved' ? 'Aprobada por IA' : 'Rechazada por IA';
           const code = r.code || r.codigo || '';
-          const photoUrl = r.supabase_url || r.photoUrl || r.http_url || '';
           const values = [
             r.name || '',
             code,
             r.dni || '',
             r.email || '',
             r.esp || '',
-            photoUrl,
             ia
           ].map(v => '"' + String(v).replace(/"/g, '""') + '"');
           csvLines.push(values.join(','));

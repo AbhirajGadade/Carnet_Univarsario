@@ -7,11 +7,12 @@ UMA Photo Validator API
 Rules:
 - Image must be a valid JPG/PNG
 - Detect 1 face (Haar)
-- Resize to 240x288
-- Background mostly white/clear
+- Crop around the face to 240x288 aspect ratio
+- Resize to 240x288 pixels (rectangular, no oval)
+- Background mostly white/clear (background is cleaned to white)
 - Final JPEG <= 50KB
 - Save to photos/approved or photos/rejected
-- If approved, upload to Supabase Storage (bucket: student-photos)
+- If approved, upload to Supabase Storage (bucket student-photos/approved)
 """
 
 import base64
@@ -21,28 +22,28 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from dotenv import load_dotenv
 import cv2
 import numpy as np
+import requests
 from cv2 import data as cv2_data
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, ImageOps
-import requests  # <--- needed for Supabase REST calls
 
 load_dotenv()
 
 # ---------------- Config ----------------
+# Final photo size (rectangular)
 TARGET_W, TARGET_H = 240, 288
-MAX_BYTES = int(os.getenv("UMA_MAX_BYTES", 50 * 1024))  # 50 KB strict
+
+# Max bytes (50 KB by default)
+MAX_BYTES = int(os.getenv("UMA_MAX_BYTES", 50 * 1024))
+
+# Local folder where Python saves files
 PHOTOS_DIR = os.getenv("UMA_PHOTOS_DIR", "photos")
 
-# Supabase config
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
-SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "student-photos")
-
-# background / face config
+# Background / face config
 BORDER = 10
 WHITE_L_MIN = 75
 LAB_BG_DIST = 16
@@ -56,74 +57,72 @@ os.makedirs(os.path.join(PHOTOS_DIR, "rejected"), exist_ok=True)
 # Pillow resampling constant
 try:
     from PIL.Image import Resampling
+
     RESAMPLE_LANCZOS = Resampling.LANCZOS
 except Exception:
     RESAMPLE_LANCZOS = getattr(Image, "LANCZOS", getattr(Image, "BILINEAR", 2))
+
+# Supabase config
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+# IMPORTANT: this must be the "Service role" key (starts with eyJ...)
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "student-photos")
 
 
 def _log(*a: Any) -> None:
     print(*a, flush=True)
 
 
-# ---------------- Supabase upload helper ----------------
-def _supabase_upload_local_file(local_path: str, object_key: str) -> Dict[str, Any]:
+# ---------------- Supabase helper ----------------
+def upload_to_supabase(jpg_bytes: bytes, path_in_bucket: str) -> Dict[str, Any]:
     """
-    Uploads a local JPEG file to Supabase Storage.
-
-    - local_path: path on disk (e.g. photos/approved/12345678.jpg)
-    - object_key: key in the bucket (e.g. approved/12345678.jpg)
-
-    Uses:
-      SUPABASE_URL
-      SUPABASE_SERVICE_ROLE_KEY
-      SUPABASE_BUCKET
+    Upload JPEG bytes to Supabase Storage.
+    Returns dict with ok/public_url or error.
     """
-    info: Dict[str, Any] = {"used": False, "object_key": object_key}
+    info: Dict[str, Any] = {"ok": False}
 
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-        info["error"] = "missing_supabase_config"
-        return info
-
-    if not os.path.exists(local_path):
-        info["error"] = "file_not_found"
+        info["error"] = "supabase_not_configured"
+        _log("[supabase] missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
         return info
 
     try:
-        with open(local_path, "rb") as f:
-            data = f.read()
+        # Example object path:
+        #   bucket: student-photos
+        #   path_in_bucket: approved/12345678.jpg
+        # Final URL path: /storage/v1/object/student-photos/approved/12345678.jpg
+        object_path = f"{SUPABASE_BUCKET}/{path_in_bucket.lstrip('/')}"
+        url = f"{SUPABASE_URL}/storage/v1/object/{object_path}"
 
-        endpoint = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{object_key}"
-
-        # IMPORTANT:
-        #  - Use secret key as "apikey"
-        #  - Do NOT put it in Authorization as Bearer (that causes 'Invalid Compact JWS')
+        # Service role key is used as both apikey and Bearer token.
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
             "Content-Type": "image/jpeg",
-            "x-upsert": "true",
+            "x-upsert": "true",  # overwrite if already exists
         }
 
-        resp = requests.post(endpoint, headers=headers, data=data, timeout=30)
-        info["status_code"] = resp.status_code
+        resp = requests.post(url, headers=headers, data=jpg_bytes, timeout=30)
 
-        if resp.ok:
-            info["used"] = True
-            # public URL (bucket is Public in your screenshots)
-            info[
-                "public_url"
-            ] = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{object_key}"
-        else:
-            info["error"] = f"{resp.status_code} {resp.text}"
+        if resp.status_code not in (200, 201):
+            info["error"] = f"upload_failed_{resp.status_code}"
+            info["details"] = resp.text[:200]
+            _log("[supabase] upload failed:", info["error"], info.get("details", ""))
+            return info
 
+        # Public URL (bucket is Public)
+        public_url = (
+            f"{SUPABASE_URL}/storage/v1/object/public/"
+            f"{SUPABASE_BUCKET}/{path_in_bucket.lstrip('/')}"
+        )
+
+        info.update({"ok": True, "public_url": public_url, "status": resp.status_code})
+        _log("[supabase] uploaded:", public_url)
+        return info
     except Exception as e:
         info["error"] = repr(e)
-
-    if info.get("error"):
-        _log("[supabase] upload failed:", info["error"])
-    else:
-        _log("[supabase] upload ok:", info.get("public_url"))
-
-    return info
+        _log("[supabase] upload exception:", repr(e))
+        return info
 
 
 # ---------------- FastAPI app ----------------
@@ -131,7 +130,7 @@ app = FastAPI(title="UMA Photo Validator")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # adjust for prod
+    allow_origins=["*"],  # adjust for prod
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -176,27 +175,34 @@ def detect_face(bgr: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
 
 
 def crop_to_ratio(rgb: np.ndarray, face: Optional[Tuple[int, int, int, int]]) -> np.ndarray:
-    """Crop image to TARGET_W:TARGET_H, trying to keep face centered."""
+    """
+    Crop image to TARGET_W:TARGET_H (240x288) keeping the face centered.
+    Result is a normal rectangle (no oval).
+    """
     h, w = rgb.shape[:2]
     target = TARGET_W / TARGET_H
     r = w / h
+
     if r > target:
+        # Image too wide -> crop left/right
         new_w = int(h * target)
         new_h = h
         cx = w // 2
         if face:
             cx = face[0] + face[2] // 2
-        x1 = max(0, min(w - new_w, cx - new_w // 2))
+        x1 = max(0, min(w - new_w, int(cx - new_w // 2)))
         y1 = 0
     else:
+        # Image too tall -> crop top/bottom
         new_w = w
         new_h = int(w / target)
         cy = h // 2
         if face:
             cy = face[1] + face[3] // 2
         x1 = 0
-        y1 = max(0, min(h - new_h, cy - new_h // 2))
-    return rgb[y1: y1 + new_h, x1: x1 + new_w]
+        y1 = max(0, min(h - new_h, int(cy - new_h // 2)))
+
+    return rgb[y1 : y1 + new_h, x1 : x1 + new_w]
 
 
 def rgb_to_lab(a: np.ndarray) -> np.ndarray:
@@ -204,7 +210,11 @@ def rgb_to_lab(a: np.ndarray) -> np.ndarray:
 
 
 def whiten_background(rgb: np.ndarray) -> Tuple[np.ndarray, float]:
-    """Make background whiter and return (image, % of border that is already bright)."""
+    """
+    Try to make background white.
+    It samples the border colors and turns pixels similar to that into pure white.
+    Returns (image, % of border that was already bright).
+    """
     h, w = rgb.shape[:2]
     b = min(BORDER, h // 4, w // 4)
     border = np.concatenate(
@@ -282,7 +292,7 @@ def health() -> Dict[str, Any]:
         "supabase": {
             "url": SUPABASE_URL,
             "bucket": SUPABASE_BUCKET,
-            "has_key": bool(SUPABASE_SERVICE_ROLE_KEY),
+            "configured": bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY),
         },
     }
 
@@ -303,6 +313,7 @@ def validate(
     issues: List[str] = []
 
     try:
+        # 1) Load and normalise
         try:
             pil_in = load_pil(image)
         except Exception:
@@ -315,17 +326,24 @@ def validate(
         rgb = to_np(pil_in)
         bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
+        # 2) Face detection + rules
         face = detect_face(bgr)
         issues += face_rules(rgb, face)
 
+        # 3) Crop to target ratio around face
         cropped = crop_to_ratio(rgb, face)
+
+        # 4) Whiten background
         whitened, white_pct = whiten_background(cropped)
         if white_pct < 60:
             issues.append("Fondo no es suficientemente claro/blanco.")
 
+        # 5) Resize to final size (rectangle)
         pil_out = Image.fromarray(whitened).resize(
             (TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS
         )
+
+        # 6) Compress under MAX_BYTES
         jpg = jpg_under_size(pil_out, MAX_BYTES)
 
         if len(jpg) > MAX_BYTES:
@@ -335,9 +353,11 @@ def validate(
             )
 
         ok = (len(issues) == 0) and (len(jpg) <= MAX_BYTES)
+
         if not ok and not issues:
             issues.append("La foto no cumple con los criterios requeridos.")
 
+        # 7) Save locally
         bucket = "approved" if ok else "rejected"
         ts = int(time.time())
         fname = f"{dni}.jpg" if ok else f"{dni}_{ts}.jpg"
@@ -347,26 +367,31 @@ def validate(
         with open(save_path, "wb") as f:
             f.write(jpg)
 
+        # 8) Base64 data URL (for UI / debugging)
         data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
 
-        # --- Supabase upload (only for approved photos) ---
-        supabase_info: Dict[str, Any] = {"used": False}
-        http_url: Optional[str] = None
-
+        # 9) Supabase upload (only for approved)
+        supabase_info: Dict[str, Any] = {}
+        supabase_url: Optional[str] = None
         if ok:
-            object_key = f"{bucket}/{fname}"  # approved/<dni>.jpg
-            supabase_info = _supabase_upload_local_file(save_path, object_key)
-            if supabase_info.get("used"):
-                http_url = supabase_info.get("public_url")
+            object_path = f"approved/{fname}"
+            supabase_info = upload_to_supabase(jpg, object_path)
+            supabase_url = supabase_info.get("public_url")
 
         _log(
             "[validator]",
-            "dni=", dni,
-            "ok=", ok,
-            "issues=", issues,
-            "bytes=", len(jpg),
-            "local=", save_path,
-            "supabase_used=", supabase_info.get("used"),
+            "dni=",
+            dni,
+            "ok=",
+            ok,
+            "issues=",
+            issues,
+            "bytes=",
+            len(jpg),
+            "local=",
+            save_path,
+            "supabase_used=",
+            bool(supabase_url),
         )
 
         return {
@@ -379,11 +404,12 @@ def validate(
             "filename": fname,
             "relative_path": save_path,
             "data_url": data_url,
-            "http_url": http_url,
+            "supabase_url": supabase_url,
             "supabase": supabase_info,
         }
 
     except Exception as e:
+        # Safety net: always return JSON, never raw error
         _log("[validator] unexpected error:", repr(e))
         return {
             "ok": False,
