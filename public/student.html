@@ -404,7 +404,7 @@
             margin-bottom: 6px;
         }
 
-        /* PROFILE CARDS (style like your first screenshot) */
+        /* PROFILE CARDS */
         .profile-details-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -489,6 +489,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -560,6 +561,66 @@
             margin-bottom: 4px;
         }
 
+        /* Big buttons for photo section */
+        .btn-row-photo {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .photo-btn {
+            flex: 0 0 260px;
+            height: 68px;
+            border-radius: 999px;
+            font-size: 20px;
+            padding: 0 32px;
+            justify-content: center;
+            box-shadow: 0 16px 40px rgba(240, 36, 84, .25);
+        }
+
+        .photo-btn i {
+            font-size: 22px;
+        }
+
+        /* AI button styling (Uiverse-like) */
+        .photo-btn.ai-btn {
+            background: #100720;
+            border: none;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-btn.ai-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(
+                circle farthest-corner at 10% 20%,
+                rgba(255, 94, 247, 1) 17.8%,
+                rgba(2, 245, 255, 1) 100.2%
+            );
+            filter: blur(18px);
+            z-index: -1;
+        }
+
+        .photo-btn.ai-btn:active {
+            transform: scale(0.96) rotate(1deg);
+            transition: 0.15s;
+        }
+
+        .photo-btn.ai-btn:disabled {
+            opacity: 0.7;
+        }
+
+        .photo-msg {
+            flex: 1 1 220px;
+            font-size: 13px;
+            min-height: 1.4em;
+        }
+
         #errOverlay {
             position: fixed;
             right: 12px;
@@ -607,6 +668,20 @@
 
             .preview {
                 grid-template-columns: 1fr;
+            }
+
+            .btn-row-photo {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .photo-btn {
+                width: 100%;
+                flex: 1 0 auto;
+            }
+
+            .photo-msg {
+                width: 100%;
             }
         }
     </style>
@@ -696,7 +771,7 @@
                                     <div class="profile-email" id="pemail">—</div>
                                 </div>
                             </div>
-                            
+
                             <!-- Cards styled like first screenshot, with data of second screenshot -->
                             <div class="profile-details-grid">
                                 <div class="profile-field">
@@ -887,14 +962,16 @@
                             </div>
                         </div>
 
-                        <div class="btn-row" style="margin-top:12px;">
-                            <button id="savePhoto" class="btn" disabled type="button">
+                        <div class="btn-row btn-row-photo">
+                            <button id="savePhoto" class="btn photo-btn" disabled type="button">
                                 <i class="fas fa-cloud-upload-alt"></i> Guardar foto
                             </button>
-                            <button id="clearPhoto" type="button" class="btn secondary">
-                                Limpiar
+
+                            <button id="aiPhoto" type="button" class="btn photo-btn ai-btn">
+                                <i class="fas fa-wand-magic-sparkles"></i> Arreglar con IA
                             </button>
-                            <span id="photoMsg" style="font-size:13px;margin-left:4px;"></span>
+
+                            <span id="photoMsg" class="photo-msg"></span>
                         </div>
                     </div>
                 </div>
@@ -953,12 +1030,12 @@
         if (code) {
             sessionChip.innerHTML = `
                 <div class="session-icon"><i class="fas fa-user"></i></div>
-                <span>Connected: ${code}</span>
+                <span>conectado: ${code}</span>
             `;
         } else {
             sessionChip.innerHTML = `
                 <div class="session-icon"><i class="fas fa-user"></i></div>
-                <span>Connected</span>
+                <span>conectado</span>
             `;
         }
 
@@ -1061,7 +1138,7 @@
                 const initials = initialsFromName(fullName !== '—' ? fullName : academicCode);
                 profileAvatar.textContent = initials;
 
-                // Cards (first screenshot style)
+                // Cards
                 document.getElementById('pcodigo').textContent = academicCode || '—';
                 document.getElementById('pdni').textContent = dni || '—';
                 document.getElementById('papellidos').textContent = lastName || '—';
@@ -1158,14 +1235,14 @@
             window.dispatchEvent(new Event('uma-form-saved'));
         });
 
-        // ------------- PHOTO SECTION (mantiene /validate, manual) -------------
+        // ------------- PHOTO SECTION -------------
         (function photoSection() {
             const drop = document.getElementById('drop');
             const fileInput = document.getElementById('file');
             const prev = document.getElementById('prev');
             const imgPrev = document.getElementById('imgPrev');
             const saveBtn = document.getElementById('savePhoto');
-            const clrBtn = document.getElementById('clearPhoto');
+            const aiBtn = document.getElementById('aiPhoto');
             const photoMsg = document.getElementById('photoMsg');
             const mType = document.getElementById('mType');
             const mSize = document.getElementById('mSize');
@@ -1187,12 +1264,13 @@
                     photoMsg.textContent = 'Primero guarda el formulario para poder subir tu foto.';
                 } else {
                     drop.classList.remove('locked');
-                    photoMsg.style.color = '';
                     if (currentFile) {
                         saveBtn.disabled = false;
+                        photoMsg.style.color = '';
                         photoMsg.textContent = 'Haz clic en "Guardar foto" para validar y guardar.';
                     } else {
                         saveBtn.disabled = true;
+                        photoMsg.style.color = '';
                         photoMsg.textContent = 'Selecciona una foto para validar y guardar.';
                     }
                 }
@@ -1238,14 +1316,27 @@
                             : `Error en la validación del servidor (HTTP ${resp.status}).`;
                         photoMsg.style.color = '#e74c3c';
                         photoMsg.textContent = 'Servidor rechazó la foto: ' + issues;
-                        saveBtn.disabled = false;
+                        saveBtn.disabled = false;   // permitir reintentar
                         lastValidResult = null;
                         localStorage.removeItem('uma_photo_ok');
                         renderProgress();
                         return;
                     }
 
-                    if (data.ok === true) {
+                    if (data.ok === true || data.can_upload === true) {
+                        // Mostrar info de la foto procesada (240x288, <50 KB)
+                        if (data.data_url) {
+                            imgPrev.src = data.data_url;
+                            prev.style.display = 'grid';
+                        }
+                        if (data.bytes) {
+                            mSize.textContent = (data.bytes / 1024).toFixed(1) + ' KB';
+                        }
+                        if (data.width && data.height) {
+                            mDim.textContent = `${data.width}×${data.height}`;
+                        }
+                        mType.textContent = 'image/jpeg';
+
                         photoMsg.style.color = '#27ae60';
                         photoMsg.textContent = '✓ Foto aprobada y guardada correctamente.';
                         saveBtn.disabled = false;
@@ -1253,12 +1344,15 @@
                         localStorage.setItem('uma_photo_ok', '1');
                         renderProgress();
                     } else {
-                        const issues = data.issues && data.issues.length
+                        const reasonText = (data.issues && data.issues.length)
                             ? data.issues.join(' | ')
-                            : 'Foto rechazada por el validador.';
+                            : 'La foto no cumple con los criterios requeridos.';
                         photoMsg.style.color = '#e74c3c';
-                        photoMsg.textContent = issues;
-                        saveBtn.disabled = false;
+                        photoMsg.textContent =
+                            'Foto inválida: ' + reasonText +
+                            ' Usa "Arreglar con IA" o selecciona otra foto.';
+
+                        saveBtn.disabled = true;   // no permitir subir una foto inválida
                         lastValidResult = null;
                         localStorage.removeItem('uma_photo_ok');
                         renderProgress();
@@ -1301,6 +1395,86 @@
                 }
             }
 
+            async function autoFixPhoto() {
+                if (!currentFile) {
+                    photoMsg.style.color = '#e74c3c';
+                    photoMsg.textContent = 'Primero selecciona una foto.';
+                    return;
+                }
+                if (!isFormSaved()) {
+                    updatePhotoLockState();
+                    return;
+                }
+
+                aiBtn.disabled = true;
+                saveBtn.disabled = true;
+                photoMsg.style.color = '';
+                photoMsg.textContent = 'Arreglando foto con IA…';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('image', currentFile);
+
+                    const resp = await fetch('/fix-photo', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const text = await resp.text();
+                    let data = {};
+                    try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+
+                    if (!resp.ok || data.ok !== true || !data.data_url) {
+                        const issues = (data && data.issues && data.issues.length)
+                            ? data.issues.join(' | ')
+                            : `No se pudo corregir la foto automáticamente (HTTP ${resp.status}).`;
+                        photoMsg.style.color = '#e74c3c';
+                        photoMsg.textContent = issues;
+                        saveBtn.disabled = !isFormSaved();
+                        return;
+                    }
+
+                    const dataUrl = data.data_url;
+                    imgPrev.src = dataUrl;
+                    prev.style.display = 'grid';
+
+                    if (data.bytes) {
+                        mSize.textContent = (data.bytes / 1024).toFixed(1) + ' KB';
+                    }
+                    if (data.width && data.height) {
+                        mDim.textContent = `${data.width}×${data.height}`;
+                    }
+                    mType.textContent = 'image/jpeg';
+
+                    // Convert data URL back to File so /validate uses the fixed photo
+                    const blobResp = await fetch(dataUrl);
+                    const blob = await blobResp.blob();
+                    const baseName = (currentFile.name || 'foto').replace(/\.[^/.]+$/, '');
+                    const fixedName = baseName + '_fixed.jpg';
+                    const fixedFile = new File([blob], fixedName, { type: 'image/jpeg' });
+                    currentFile = fixedFile;
+
+                    lastValidResult = null;
+                    localStorage.removeItem('uma_photo_ok');
+                    renderProgress();
+
+                    photoMsg.style.color = '#27ae60';
+                    photoMsg.textContent = 'Foto corregida. Ahora haz clic en "Guardar foto" para validarla.';
+                    if (isFormSaved()) {
+                        saveBtn.disabled = false;
+                    } else {
+                        updatePhotoLockState();
+                    }
+                } catch (err) {
+                    console.error('autoFixPhoto error', err);
+                    photoMsg.style.color = '#e74c3c';
+                    photoMsg.textContent = 'Error interno al intentar corregir la foto.';
+                    saveBtn.disabled = !isFormSaved();
+                } finally {
+                    aiBtn.disabled = false;
+                }
+            }
+
             drop.addEventListener('click', () => {
                 if (!isFormSaved()) {
                     updatePhotoLockState();
@@ -1335,18 +1509,6 @@
                 if (f) showFile(f);
             });
 
-            clrBtn.addEventListener('click', () => {
-                fileInput.value = '';
-                prev.style.display = 'none';
-                saveBtn.disabled = !isFormSaved();
-                photoMsg.textContent = '';
-                photoMsg.style.color = '';
-                currentFile = null;
-                lastValidResult = null;
-                localStorage.removeItem('uma_photo_ok');
-                renderProgress();
-            });
-
             saveBtn.addEventListener('click', () => {
                 if (!isFormSaved()) {
                     updatePhotoLockState();
@@ -1359,6 +1521,12 @@
                 }
                 callValidator(currentFile);
             });
+
+            if (aiBtn) {
+                aiBtn.addEventListener('click', () => {
+                    autoFixPhoto();
+                });
+            }
 
             window.addEventListener('uma-form-saved', updatePhotoLockState);
             updatePhotoLockState();

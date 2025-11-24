@@ -10,7 +10,9 @@ Rules:
 - Crop around the face to 240x288 aspect ratio
 - Resize to 240x288 pixels (rectangular, no oval)
 - Background mostly white/clear (background is cleaned to white)
-- Final JPEG <= 50KB
+- FINAL JPEG <= UMA_MAX_BYTES (default 50KB)
+- If the ORIGINAL file is > UMA_MAX_BYTES => mark as INVALID
+  (user must use the "Arreglar con IA" button)
 - Save to photos/approved or photos/rejected
 - If approved, upload to Supabase Storage (bucket student-photos/approved)
 """
@@ -37,7 +39,7 @@ load_dotenv()
 # Final photo size (rectangular)
 TARGET_W, TARGET_H = 240, 288
 
-# Max bytes (50 KB by default)
+# Max bytes for BOTH original + final (50 KB by default)
 MAX_BYTES = int(os.getenv("UMA_MAX_BYTES", 50 * 1024))
 
 # Local folder where Python saves files
@@ -87,14 +89,9 @@ def upload_to_supabase(jpg_bytes: bytes, path_in_bucket: str) -> Dict[str, Any]:
         return info
 
     try:
-        # Example object path:
-        #   bucket: student-photos
-        #   path_in_bucket: approved/12345678.jpg
-        # Final URL path: /storage/v1/object/student-photos/approved/12345678.jpg
         object_path = f"{SUPABASE_BUCKET}/{path_in_bucket.lstrip('/')}"
         url = f"{SUPABASE_URL}/storage/v1/object/{object_path}"
 
-        # Service role key is used as both apikey and Bearer token.
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
@@ -110,7 +107,6 @@ def upload_to_supabase(jpg_bytes: bytes, path_in_bucket: str) -> Dict[str, Any]:
             _log("[supabase] upload failed:", info["error"], info.get("details", ""))
             return info
 
-        # Public URL (bucket is Public)
         public_url = (
             f"{SUPABASE_URL}/storage/v1/object/public/"
             f"{SUPABASE_BUCKET}/{path_in_bucket.lstrip('/')}"
@@ -142,12 +138,15 @@ def sanitize_name(s: Optional[str]) -> str:
     return re.sub(r"[^\w\-]", "", (s or "").strip(), flags=re.ASCII)
 
 
-def load_pil(upload: UploadFile) -> Image.Image:
+def load_pil_and_size(upload: UploadFile) -> Tuple[Image.Image, int]:
+    """
+    Read the uploaded file once, returning (PIL_image_RGB, original_num_bytes).
+    """
     data = upload.file.read()
     pil = Image.open(io.BytesIO(data))
     if hasattr(ImageOps, "exif_transpose"):
         pil = ImageOps.exif_transpose(pil)
-    return pil.convert("RGB")  # type: ignore
+    return pil.convert("RGB"), len(data)
 
 
 def to_np(img: Image.Image) -> np.ndarray:
@@ -311,11 +310,12 @@ def validate(
     """
     dni = sanitize_name(dni) or "unknown_user"
     issues: List[str] = []
+    orig_bytes = 0
 
     try:
-        # 1) Load and normalise
+        # 1) Load + measure original size
         try:
-            pil_in = load_pil(image)
+            pil_in, orig_bytes = load_pil_and_size(image)
         except Exception:
             return {
                 "ok": False,
@@ -326,24 +326,32 @@ def validate(
         rgb = to_np(pil_in)
         bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
-        # 2) Face detection + rules
+        # 2) ORIGINAL size rule: if original > MAX_BYTES => invalid
+        if orig_bytes > MAX_BYTES:
+            issues.append(
+                f"El archivo original pesa {orig_bytes / 1024:.1f} KB; "
+                f"debe ser ≤ {MAX_BYTES // 1024} KB. "
+                "Usa el botón \"Arreglar con IA\" o selecciona otra foto."
+            )
+
+        # 3) Face detection + rules
         face = detect_face(bgr)
         issues += face_rules(rgb, face)
 
-        # 3) Crop to target ratio around face
+        # 4) Crop to target ratio around face
         cropped = crop_to_ratio(rgb, face)
 
-        # 4) Whiten background
+        # 5) Whiten background
         whitened, white_pct = whiten_background(cropped)
         if white_pct < 60:
             issues.append("Fondo no es suficientemente claro/blanco.")
 
-        # 5) Resize to final size (rectangle)
+        # 6) Resize to final size (rectangle)
         pil_out = Image.fromarray(whitened).resize(
             (TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS
         )
 
-        # 6) Compress under MAX_BYTES
+        # 7) Compress under MAX_BYTES
         jpg = jpg_under_size(pil_out, MAX_BYTES)
 
         if len(jpg) > MAX_BYTES:
@@ -357,7 +365,7 @@ def validate(
         if not ok and not issues:
             issues.append("La foto no cumple con los criterios requeridos.")
 
-        # 7) Save locally
+        # 8) Save locally
         bucket = "approved" if ok else "rejected"
         ts = int(time.time())
         fname = f"{dni}.jpg" if ok else f"{dni}_{ts}.jpg"
@@ -367,10 +375,10 @@ def validate(
         with open(save_path, "wb") as f:
             f.write(jpg)
 
-        # 8) Base64 data URL (for UI / debugging)
+        # 9) Base64 data URL (for UI / debugging)
         data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
 
-        # 9) Supabase upload (only for approved)
+        # 10) Supabase upload (only for approved)
         supabase_info: Dict[str, Any] = {}
         supabase_url: Optional[str] = None
         if ok:
@@ -386,7 +394,9 @@ def validate(
             ok,
             "issues=",
             issues,
-            "bytes=",
+            "orig_bytes=",
+            orig_bytes,
+            "final_bytes=",
             len(jpg),
             "local=",
             save_path,
@@ -400,6 +410,7 @@ def validate(
             "width": TARGET_W,
             "height": TARGET_H,
             "bytes": len(jpg),
+            "original_bytes": orig_bytes,
             "category": bucket,
             "filename": fname,
             "relative_path": save_path,
@@ -414,6 +425,77 @@ def validate(
         return {
             "ok": False,
             "issues": [f"Error interno del validador: {repr(e)}"],
+            "bytes": 0,
+        }
+
+
+@app.post("/fix-photo")
+def fix_photo(image: UploadFile = File(...)) -> Dict[str, Any]:
+    """
+    Try to automatically correct a photo (crop, white background, resize, compress).
+    This does NOT save or upload anything; it's only for the UI "Arreglar con IA".
+    """
+    try:
+        try:
+            pil_in, orig_bytes = load_pil_and_size(image)
+        except Exception:
+            return {
+                "ok": False,
+                "issues": ["Archivo no es una imagen válida."],
+                "bytes": 0,
+            }
+
+        rgb = to_np(pil_in)
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        face = detect_face(bgr)
+
+        if face is None:
+            return {
+                "ok": False,
+                "issues": ["No se detectó un rostro claro para corregir la foto."],
+                "bytes": 0,
+            }
+
+        cropped = crop_to_ratio(rgb, face)
+        whitened, _ = whiten_background(cropped)
+        pil_out = Image.fromarray(whitened).resize(
+            (TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS
+        )
+        jpg = jpg_under_size(pil_out, MAX_BYTES)
+        final_bytes = len(jpg)
+
+        if final_bytes > MAX_BYTES:
+            return {
+                "ok": False,
+                "issues": [
+                    f"No se pudo reducir el tamaño de la foto por debajo de {MAX_BYTES // 1024} KB."
+                ],
+                "bytes": final_bytes,
+            }
+
+        data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
+
+        _log(
+            "[fix-photo]",
+            "orig_bytes=",
+            orig_bytes,
+            "final_bytes=",
+            final_bytes,
+        )
+
+        return {
+            "ok": True,
+            "issues": [],
+            "width": TARGET_W,
+            "height": TARGET_H,
+            "bytes": final_bytes,
+            "data_url": data_url,
+        }
+    except Exception as e:
+        _log("[fix-photo] unexpected error:", repr(e))
+        return {
+            "ok": False,
+            "issues": [f"Error interno al corregir la foto: {repr(e)}"],
             "bytes": 0,
         }
 

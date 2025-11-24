@@ -1,4 +1,3 @@
-// server/index.js
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
@@ -88,7 +87,6 @@ function findApprovedPhotoByDni(dni) {
   const jpg = path.join(dirApproved, `${dni}.jpg`);
   if (fs.existsSync(jpg)) return jpg;
 
-  // fallback: any file starting with DNI
   try {
     const files = fs.readdirSync(dirApproved);
     const hit = files.find((name) => name.startsWith(String(dni)));
@@ -130,8 +128,8 @@ app.use(
 
 // static assets
 app.use(express.static(path.join(ROOT_DIR, 'public')));
-app.use('/photos', express.static(PHOTOS_ROOT));     // existing photos
-app.use('/downloads', express.static(ZIP_OUTPUT_DIR)); // SUNEDU ZIPs
+app.use('/photos', express.static(PHOTOS_ROOT));
+app.use('/downloads', express.static(ZIP_OUTPUT_DIR));
 
 // ---------- STUDENT LOGIN ----------
 app.post('/api/student/login', async (req, res) => {
@@ -382,6 +380,42 @@ app.post('/validate', upload.single('image'), async (req, res) => {
   }
 });
 
+// ---------- PHOTO AUTO-FIX PROXY (no log / no save) ----------
+app.post('/fix-photo', upload.single('image'), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ ok: false, issues: ['No file provided'] });
+    }
+
+    const formData = new FormData();
+    formData.append('image', file.buffer, {
+      filename: file.originalname || 'photo.jpg',
+      contentType: file.mimetype || 'application/octet-stream'
+    });
+
+    const url = `${VALIDATOR_URL}/fix-photo`;
+    console.log('[fix-photo] calling validator at:', url);
+
+    const response = await axios.post(url, formData, {
+      headers: formData.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      validateStatus: () => true
+    });
+
+    const data = response.data || {};
+    res.status(response.status || 200).json(data);
+  } catch (err) {
+    console.error('Fix-photo proxy error:', err);
+    res.status(500).json({
+      ok: false,
+      issues: ['Error interno al intentar corregir la foto automáticamente.']
+    });
+  }
+});
+
 // ---------- ADMIN: list submissions ----------
 app.get('/api/admin/submissions', async (_req, res) => {
   try {
@@ -395,14 +429,13 @@ app.get('/api/admin/submissions', async (_req, res) => {
   }
 });
 
-// ---------- ADMIN: generate ZIP (rich SUNEDU package) ----------
+// ---------- ADMIN: generate ZIP ----------
 app.post('/api/admin/generate-zip', async (req, res) => {
   try {
     const { dniList } = req.body || {};
     const list = await loadSubmissions();
     let selected = list.filter((s) => s.category === 'approved');
 
-    // If admin selected specific DNIs, filter for only those
     if (Array.isArray(dniList) && dniList.length) {
       const dniSet = new Set(dniList.map(String));
       selected = selected.filter((s) => s.dni && dniSet.has(String(s.dni)));

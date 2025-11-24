@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>UMA — Panel de Administración</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome for the user icon in the chip -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --primary: #f02454;
@@ -83,12 +85,8 @@
       font-size: 12px;
     }
 
-    .session-icon span {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
-      background: #fff;
+    .session-icon i {
+      font-size: 12px;
     }
 
     .pill {
@@ -423,7 +421,7 @@
         </div>
       </div>
       <div class="session-chip" id="sessionChip">
-        <div class="session-icon"><span></span></div>
+        <div class="session-icon"><i class="fas fa-user"></i></div>
         <span>Conectado</span>
       </div>
     </div>
@@ -593,6 +591,7 @@
           span.textContent = 'Modo demo admin';
           return;
         }
+        // Spanish text like student portal
         span.textContent = `Conectado: ${email}`;
       })();
 
@@ -864,7 +863,7 @@
         return boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
       }
 
-      // --- Export CSV (Estudiante + Código + ...) ---
+      // --- Export CSV with requested columns ---
       function exportApprovedToCSV() {
         const rows = datasets.approved || [];
         if (!rows.length) {
@@ -872,21 +871,40 @@
           return;
         }
 
-        const header = ['Estudiante', 'Código', 'DNI', 'Email', 'Especialidad', 'IA'];
+        const header = [
+          'Nombre',
+          'Código',
+          'Periodo',
+          'DNI',
+          'Email',
+          'Especialidad',
+          'Carrera',
+          'Facultad',
+          'Supabase URL'
+        ];
         const csvLines = [];
         csvLines.push(header.join(','));
 
         rows.forEach(r => {
-          const ia = r.category === 'approved' ? 'Aprobada por IA' : 'Rechazada por IA';
           const code = r.code || r.codigo || '';
+          const period = r.period || r.periodo || r.semester || '';
+          const esp = r.esp || r.especialidad || '';
+          const carrera = r.carrera || r.career || esp;
+          const facultad = r.facultad || r.faculty || r.facultyName || '';
+          const supa = r.supabase_url || '';
+
           const values = [
             r.name || '',
             code,
+            period,
             r.dni || '',
             r.email || '',
-            r.esp || '',
-            ia
+            esp,
+            carrera,
+            facultad,
+            supa
           ].map(v => '"' + String(v).replace(/"/g, '""') + '"');
+
           csvLines.push(values.join(','));
         });
 
