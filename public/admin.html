@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>UMA — Panel de Administración</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <!-- Font Awesome for the user icon in the chip -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --primary: #f02454;
@@ -60,7 +58,11 @@
       height: 36px;
     }
 
-    /* student-like session chip */
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
     .session-chip {
       display: inline-flex;
       align-items: center;
@@ -81,12 +83,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      font-size: 12px;
+      position: relative;
     }
 
-    .session-icon i {
-      font-size: 12px;
+    .session-icon::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #fff;
+      position: absolute;
+      top: 4px;
+    }
+
+    .session-icon::after {
+      content: "";
+      width: 10px;
+      height: 6px;
+      border-radius: 999px 999px 0 0;
+      border: 2px solid #fff;
+      border-bottom: 0;
+      position: absolute;
+      bottom: 3px;
     }
 
     .pill {
@@ -216,7 +234,6 @@
       box-shadow: none;
     }
 
-    /* danger delete like before */
     .btn-danger {
       background: #f44336;
       border-color: #f44336;
@@ -414,14 +431,14 @@
   <div class="container">
     <div class="header">
       <div class="brand">
-        <img src="assets/images/logo-pdf.png" alt="UMA">
+        <img src="assets/images/logo-pdf.png" alt="UMA" />
         <div>
-          <h1 style="margin:0;font-size:18px">Panel Administrativo UMA</h1>
+          <h1>Panel Administrativo UMA</h1>
           <div class="muted">Gestión de solicitudes y fotos</div>
         </div>
       </div>
       <div class="session-chip" id="sessionChip">
-        <div class="session-icon"><i class="fas fa-user"></i></div>
+        <div class="session-icon"></div>
         <span>Conectado</span>
       </div>
     </div>
@@ -444,13 +461,12 @@
         <section id="route-approved" class="card pad screen active">
           <div class="toolbar">
             <div class="toolbar-left">
-              <input type="text" class="search" placeholder="Buscar por correo, DNI o nombre…">
+              <input type="text" class="search" placeholder="Buscar por código, nombre, correo o DNI…">
               <button id="exportCSV" class="btn ghost" type="button">Exportar CSV</button>
               <span class="muted" id="countApproved">0 resultado(s)</span>
             </div>
           </div>
 
-          <!-- sólo eliminar, estilo peligro -->
           <div class="toolbar" style="margin-top:4px;margin-bottom:8px;">
             <div class="toolbar-left">
               <button class="btn btn-danger" id="btnDelete" type="button">Eliminar seleccionados</button>
@@ -461,13 +477,13 @@
             <thead>
               <tr>
                 <th></th>
-                <th>Estudiante</th>
                 <th>Código</th>
-                <th>DNI</th>
-                <th>Email</th>
-                <th>Especialidad</th>
-                <th>Foto (URL)</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>FACULTAD</th>
+                <th>CARRERA</th>
                 <th>IA</th>
+                <th>Supabase URL</th>
                 <th></th>
               </tr>
             </thead>
@@ -479,17 +495,18 @@
         <section id="route-rejected" class="card pad screen">
           <div class="toolbar">
             <div class="toolbar-left">
-              <input type="text" class="search" placeholder="Buscar por correo, DNI o nombre…">
+              <input type="text" class="search" placeholder="Buscar por código, nombre, correo o DNI…">
               <span class="muted" id="countRejected">0 resultado(s)</span>
             </div>
           </div>
           <table>
             <thead>
               <tr>
-                <th>Estudiante</th>
-                <th>DNI</th>
-                <th>Email</th>
-                <th>Especialidad</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>FACULTAD</th>
+                <th>CARRERA</th>
                 <th>Motivo</th>
                 <th></th>
               </tr>
@@ -518,7 +535,7 @@
               <tr>
                 <th></th>
                 <th>Código</th>
-                <th>Estudiante</th>
+                <th>Nombre</th>
                 <th>DNI</th>
                 <th>Estado SUNEDU</th>
                 <th>Actualizado</th>
@@ -534,7 +551,7 @@
 
   <div id="toast"></div>
 
-  <!-- Drawer -->
+  <!-- Drawer detalle estudiante -->
   <aside id="drawer">
     <header>
       <div>
@@ -547,17 +564,27 @@
       <div class="drawer-grid">
         <img id="dPhoto" alt="Foto" />
         <div class="drawer-meta">
-          <div><span class="drawer-label">IA</span><div id="dAI" class="drawer-value"></div></div>
-          <div><span class="drawer-label">SUNEDU</span><div id="dSunedu" class="drawer-value"></div></div>
-          <div><span class="drawer-label">Actualizado</span><div id="dUpdated" class="drawer-value"></div></div>
+          <div>
+            <span class="drawer-label">IA</span>
+            <div id="dAI" class="drawer-value"></div>
+          </div>
+          <div>
+            <span class="drawer-label">SUNEDU</span>
+            <div id="dSunedu" class="drawer-value"></div>
+          </div>
+          <div>
+            <span class="drawer-label">Actualizado</span>
+            <div id="dUpdated" class="drawer-value"></div>
+          </div>
         </div>
       </div>
       <div class="drawer-meta">
         <div><span class="drawer-label">Código</span><div id="dCode" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">Estudiante</span><div id="dName" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">Nombre</span><div id="dName" class="drawer-value">—</div></div>
         <div><span class="drawer-label">DNI</span><div id="dDni" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">Email</span><div id="dEmail" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">Especialidad</span><div id="dEsp" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">Correo</span><div id="dEmail" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">FACULTAD</span><div id="dFac" class="drawer-value">—</div></div>
+        <div><span class="drawer-label">CARRERA</span><div id="dCarr" class="drawer-value">—</div></div>
         <div><span class="drawer-label">URL Supabase</span><div id="dSupabase" class="drawer-value">—</div></div>
       </div>
     </main>
@@ -580,10 +607,11 @@
         setTimeout(() => el.remove(), 4000);
       }
 
-      // ---- guard ----
+      // ---- session chip: "Conectado: código/email" ----
       (function guard() {
         const role = localStorage.getItem('uma_session_role');
-        const email = localStorage.getItem('uma_session_email') || 'admin';
+        const email = localStorage.getItem('uma_session_email') || '';
+        const code = localStorage.getItem('uma_session_code') || '';
         const chip = document.getElementById('sessionChip');
         const span = chip.querySelector('span');
 
@@ -591,8 +619,9 @@
           span.textContent = 'Modo demo admin';
           return;
         }
-        // Spanish text like student portal
-        span.textContent = `Conectado: ${email}`;
+
+        const who = code || email || 'admin';
+        span.textContent = `Conectado: ${who}`;
       })();
 
       function goto(hash) {
@@ -624,7 +653,8 @@
       const dName = document.getElementById('dName');
       const dDni = document.getElementById('dDni');
       const dEmail = document.getElementById('dEmail');
-      const dEsp = document.getElementById('dEsp');
+      const dFac = document.getElementById('dFac');
+      const dCarr = document.getElementById('dCarr');
       const dUpdated = document.getElementById('dUpdated');
       const dCode = document.getElementById('dCode');
       const dSupabase = document.getElementById('dSupabase');
@@ -650,7 +680,8 @@
         dName.textContent = row.name || '—';
         dDni.textContent = row.dni || '—';
         dEmail.textContent = row.email || '—';
-        dEsp.textContent = row.esp || '—';
+        dFac.textContent = row.facultad || row.faculty || '—';
+        dCarr.textContent = row.carrera || row.esp || '—';
         dUpdated.textContent = row.updatedAt ? new Date(row.updatedAt).toLocaleString('es-PE') : '—';
 
         if (row.supabase_url) {
@@ -669,11 +700,12 @@
 
       function renderTable(tbodyId, rows, kind, ds) {
         const tb = document.getElementById(tbodyId);
+
         if (!rows.length) {
           if (kind === 'approved') {
             renderEmptyRow(tbodyId, 9, 'Sin solicitudes aprobadas aún.');
           } else if (kind === 'rejected') {
-            renderEmptyRow(tbodyId, 6, 'Sin solicitudes rechazadas.');
+            renderEmptyRow(tbodyId, 7, 'Sin solicitudes rechazadas.');
           } else {
             renderEmptyRow(tbodyId, 7, 'No hay aprobados para SUNEDU.');
           }
@@ -683,31 +715,39 @@
         if (kind === 'approved') {
           tb.innerHTML = rows.map((r, i) => {
             const iaOk = r.category === 'approved';
-            const url = r.supabase_url || r.photoUrl || '';
-            const link = url ? `<a href="${url}" target="_blank" rel="noopener">Abrir</a>` : '—';
+            const code = r.code || r.codigo || '—';
+            const name = r.name || '—';
+            const email = r.email || '—';
+            const facultad = r.facultad || r.faculty || '—';
+            const carrera = r.carrera || r.esp || '—';
+            const supa = r.supabase_url || '';
+            const supaLink = supa ? `<a href="${supa}" target="_blank" rel="noopener">Abrir</a>` : '—';
 
             return `
-            <tr>
-              <td><input type="checkbox" data-dni="${r.dni || ''}"></td>
-              <td>${r.name || '—'}</td>
-              <td>${r.code || r.codigo || '—'}</td>
-              <td>${r.dni || '—'}</td>
-              <td>${r.email || '—'}</td>
-              <td>${r.esp || '—'}</td>
-              <td>${link}</td>
-              <td><span class="status-badge ${iaOk ? 'status-approved' : 'status-rejected'}">
+              <tr>
+                <td><input type="checkbox" data-dni="${r.dni || ''}"></td>
+                <td>${code}</td>
+                <td>${name}</td>
+                <td>${email}</td>
+                <td>${facultad}</td>
+                <td>${carrera}</td>
+                <td>
+                  <span class="status-badge ${iaOk ? 'status-approved' : 'status-rejected'}">
                     ${iaOk ? 'Aprobada por IA' : 'Rechazada por IA'}
-                  </span></td>
-              <td><button class="btn ghost viewBtn" data-kind="approved" data-index="${i}" type="button">Ver</button></td>
-            </tr>`;
+                  </span>
+                </td>
+                <td>${supaLink}</td>
+                <td><button class="btn ghost viewBtn" data-kind="approved" data-index="${i}" type="button">Ver</button></td>
+              </tr>`;
           }).join('');
         } else if (kind === 'rejected') {
           tb.innerHTML = rows.map((r, i) => `
             <tr>
+              <td>${r.code || r.codigo || '—'}</td>
               <td>${r.name || '—'}</td>
-              <td>${r.dni || '—'}</td>
               <td>${r.email || '—'}</td>
-              <td>${r.esp || '—'}</td>
+              <td>${r.facultad || r.faculty || '—'}</td>
+              <td>${r.carrera || r.esp || '—'}</td>
               <td>${(r.issues && r.issues.join(' | ')) || '—'}</td>
               <td><button class="btn ghost viewBtn" data-kind="rejected" data-index="${i}" type="button">Ver</button></td>
             </tr>`).join('');
@@ -718,9 +758,11 @@
               <td>${r.codigo || r.code || '—'}</td>
               <td>${r.name || '—'}</td>
               <td>${r.dni || '—'}</td>
-              <td><span class="status-badge ${r.suneduStatus === 'Enviado' ? 'status-approved' : 'status-pending'}">
-                    ${r.suneduStatus || 'Pendiente'}
-                  </span></td>
+              <td>
+                <span class="status-badge ${r.suneduStatus === 'Enviado' ? 'status-approved' : 'status-pending'}">
+                  ${r.suneduStatus || 'Pendiente'}
+                </span>
+              </td>
               <td>${r.updatedAt ? new Date(r.updatedAt).toLocaleString('es-PE') : '—'}</td>
               <td><button class="btn ghost viewBtn" data-kind="sunedu" data-index="${i}" type="button">Ver</button></td>
             </tr>`).join('');
@@ -756,9 +798,9 @@
           const approved = j.data?.approved || [];
           const rejected = j.data?.rejected || [];
 
-          const sunedu = approved.map((r, i) => ({
-            ...r,
-            codigo: r.code || r.codigo || ('A' + (i + 1))
+          const sunedu = approved.map((row, i) => ({
+            ...row,
+            codigo: row.code || row.codigo || ('A' + (i + 1))
           }));
 
           datasets = { approved, rejected, sunedu };
@@ -779,7 +821,7 @@
 
       async function generateZipForApproved() {
         try {
-          const tbody = document.getElementById('suneduRows'); // usamos SUNEDU para ZIP
+          const tbody = document.getElementById('suneduRows');
           const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
           const dniList = boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
 
@@ -863,7 +905,7 @@
         return boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
       }
 
-      // --- Export CSV with requested columns ---
+      // --- Export CSV: Código, Nombre, Correo, FACULTAD, CARRERA, Supabase URL ---
       function exportApprovedToCSV() {
         const rows = datasets.approved || [];
         if (!rows.length) {
@@ -871,44 +913,29 @@
           return;
         }
 
-        const header = [
-          'Nombre',
-          'Código',
-          'Periodo',
-          'DNI',
-          'Email',
-          'Especialidad',
-          'Carrera',
-          'Facultad',
-          'Supabase URL'
-        ];
+        const header = ['Código', 'Nombre', 'Correo', 'FACULTAD', 'CARRERA', 'Supabase URL'];
         const csvLines = [];
         csvLines.push(header.join(','));
 
-        rows.forEach(r => {
+        rows.forEach((r) => {
           const code = r.code || r.codigo || '';
-          const period = r.period || r.periodo || r.semester || '';
-          const esp = r.esp || r.especialidad || '';
-          const carrera = r.carrera || r.career || esp;
-          const facultad = r.facultad || r.faculty || r.facultyName || '';
-          const supa = r.supabase_url || '';
+          const name = r.name || '';
+          const email = r.email || '';
+          const facultad = r.facultad || r.faculty || '';
+          const carrera = r.carrera || r.esp || '';
+          const supabase = r.supabase_url || '';
 
-          const values = [
-            r.name || '',
-            code,
-            period,
-            r.dni || '',
-            r.email || '',
-            esp,
-            carrera,
-            facultad,
-            supa
-          ].map(v => '"' + String(v).replace(/"/g, '""') + '"');
-
+          const values = [code, name, email, facultad, carrera, supabase].map(v =>
+            '"' + String(v ?? '').replace(/"/g, '""') + '"'
+          );
           csvLines.push(values.join(','));
         });
 
-        const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        // UTF-8 with BOM so Excel shows accents correctly
+        const blob = new Blob(['\uFEFF' + csvLines.join('\n')], {
+          type: 'text/csv;charset=utf-8;'
+        });
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
 
@@ -934,7 +961,9 @@
       });
 
       document.getElementById('btnZipSunedu').addEventListener('click', generateZipForApproved);
-      document.getElementById('btnMarkSentSunedu').addEventListener('click', () => toast('Marcadas (SUNEDU) enviadas (demo)', false));
+      document.getElementById('btnMarkSentSunedu').addEventListener('click', () =>
+        toast('Marcadas (SUNEDU) enviadas (demo)', false)
+      );
       document.getElementById('btnDeleteSunedu').addEventListener('click', () => {
         const dniList = collectDniFromTable('suneduRows');
         deleteByDniList(dniList);

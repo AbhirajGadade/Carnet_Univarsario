@@ -489,7 +489,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .btn {
@@ -561,66 +560,6 @@
             margin-bottom: 4px;
         }
 
-        /* Big buttons for photo section */
-        .btn-row-photo {
-            margin-top: 18px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            flex-wrap: wrap;
-        }
-
-        .photo-btn {
-            flex: 0 0 260px;
-            height: 68px;
-            border-radius: 999px;
-            font-size: 20px;
-            padding: 0 32px;
-            justify-content: center;
-            box-shadow: 0 16px 40px rgba(240, 36, 84, .25);
-        }
-
-        .photo-btn i {
-            font-size: 22px;
-        }
-
-        /* AI button styling (Uiverse-like) */
-        .photo-btn.ai-btn {
-            background: #100720;
-            border: none;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, .35);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .photo-btn.ai-btn::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: radial-gradient(
-                circle farthest-corner at 10% 20%,
-                rgba(255, 94, 247, 1) 17.8%,
-                rgba(2, 245, 255, 1) 100.2%
-            );
-            filter: blur(18px);
-            z-index: -1;
-        }
-
-        .photo-btn.ai-btn:active {
-            transform: scale(0.96) rotate(1deg);
-            transition: 0.15s;
-        }
-
-        .photo-btn.ai-btn:disabled {
-            opacity: 0.7;
-        }
-
-        .photo-msg {
-            flex: 1 1 220px;
-            font-size: 13px;
-            min-height: 1.4em;
-        }
-
         #errOverlay {
             position: fixed;
             right: 12px;
@@ -669,20 +608,6 @@
             .preview {
                 grid-template-columns: 1fr;
             }
-
-            .btn-row-photo {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .photo-btn {
-                width: 100%;
-                flex: 1 0 auto;
-            }
-
-            .photo-msg {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -713,7 +638,7 @@
             <div class="header-right">
                 <div class="session-chip" id="sessionChip">
                     <div class="session-icon"><i class="fas fa-user"></i></div>
-                    <span>Connected</span>
+                    <span>Conectado</span>
                 </div>
             </div>
         </div>
@@ -771,8 +696,8 @@
                                     <div class="profile-email" id="pemail">—</div>
                                 </div>
                             </div>
-
-                            <!-- Cards styled like first screenshot, with data of second screenshot -->
+                            
+                            <!-- Cards -->
                             <div class="profile-details-grid">
                                 <div class="profile-field">
                                     <div class="profile-field-label">CÓDIGO</div>
@@ -962,16 +887,17 @@
                             </div>
                         </div>
 
-                        <div class="btn-row btn-row-photo">
-                            <button id="savePhoto" class="btn photo-btn" disabled type="button">
+                        <div class="btn-row" style="margin-top:12px;">
+                            <button id="savePhoto" class="btn" disabled type="button">
                                 <i class="fas fa-cloud-upload-alt"></i> Guardar foto
                             </button>
 
-                            <button id="aiPhoto" type="button" class="btn photo-btn ai-btn">
+                            <!-- AI auto-fix button -->
+                            <button id="aiPhoto" type="button" class="btn secondary">
                                 <i class="fas fa-wand-magic-sparkles"></i> Arreglar con IA
                             </button>
 
-                            <span id="photoMsg" class="photo-msg"></span>
+                            <span id="photoMsg" style="font-size:13px;margin-left:4px;"></span>
                         </div>
                     </div>
                 </div>
@@ -1030,12 +956,12 @@
         if (code) {
             sessionChip.innerHTML = `
                 <div class="session-icon"><i class="fas fa-user"></i></div>
-                <span>conectado: ${code}</span>
+                <span>Conectado: ${code}</span>
             `;
         } else {
             sessionChip.innerHTML = `
                 <div class="session-icon"><i class="fas fa-user"></i></div>
-                <span>conectado</span>
+                <span>Conectado</span>
             `;
         }
 
@@ -1264,13 +1190,12 @@
                     photoMsg.textContent = 'Primero guarda el formulario para poder subir tu foto.';
                 } else {
                     drop.classList.remove('locked');
+                    photoMsg.style.color = '';
                     if (currentFile) {
                         saveBtn.disabled = false;
-                        photoMsg.style.color = '';
                         photoMsg.textContent = 'Haz clic en "Guardar foto" para validar y guardar.';
                     } else {
                         saveBtn.disabled = true;
-                        photoMsg.style.color = '';
                         photoMsg.textContent = 'Selecciona una foto para validar y guardar.';
                     }
                 }
@@ -1291,6 +1216,7 @@
                 const fullName = document.getElementById('pname').textContent || '';
                 const email = document.getElementById('pemail').textContent || '';
                 const esp = document.getElementById('pcarrera').textContent || '';
+                const facultad = document.getElementById('pfacultad').textContent || '';
 
                 try {
                     const formData = new FormData();
@@ -1299,7 +1225,8 @@
                     formData.append('code', code || '');
                     formData.append('name', fullName);
                     formData.append('email', email);
-                    formData.append('esp', esp);
+                    formData.append('esp', esp);       // carrera
+                    formData.append('facultad', facultad); // facultad  <<< NEW
 
                     const resp = await fetch('/validate', {
                         method: 'POST',
@@ -1316,27 +1243,14 @@
                             : `Error en la validación del servidor (HTTP ${resp.status}).`;
                         photoMsg.style.color = '#e74c3c';
                         photoMsg.textContent = 'Servidor rechazó la foto: ' + issues;
-                        saveBtn.disabled = false;   // permitir reintentar
+                        saveBtn.disabled = false;
                         lastValidResult = null;
                         localStorage.removeItem('uma_photo_ok');
                         renderProgress();
                         return;
                     }
 
-                    if (data.ok === true || data.can_upload === true) {
-                        // Mostrar info de la foto procesada (240x288, <50 KB)
-                        if (data.data_url) {
-                            imgPrev.src = data.data_url;
-                            prev.style.display = 'grid';
-                        }
-                        if (data.bytes) {
-                            mSize.textContent = (data.bytes / 1024).toFixed(1) + ' KB';
-                        }
-                        if (data.width && data.height) {
-                            mDim.textContent = `${data.width}×${data.height}`;
-                        }
-                        mType.textContent = 'image/jpeg';
-
+                    if (data.ok === true) {
                         photoMsg.style.color = '#27ae60';
                         photoMsg.textContent = '✓ Foto aprobada y guardada correctamente.';
                         saveBtn.disabled = false;
@@ -1344,15 +1258,12 @@
                         localStorage.setItem('uma_photo_ok', '1');
                         renderProgress();
                     } else {
-                        const reasonText = (data.issues && data.issues.length)
+                        const issues = data.issues && data.issues.length
                             ? data.issues.join(' | ')
-                            : 'La foto no cumple con los criterios requeridos.';
+                            : 'Foto rechazada por el validador.';
                         photoMsg.style.color = '#e74c3c';
-                        photoMsg.textContent =
-                            'Foto inválida: ' + reasonText +
-                            ' Usa "Arreglar con IA" o selecciona otra foto.';
-
-                        saveBtn.disabled = true;   // no permitir subir una foto inválida
+                        photoMsg.textContent = issues;
+                        saveBtn.disabled = false;
                         lastValidResult = null;
                         localStorage.removeItem('uma_photo_ok');
                         renderProgress();
@@ -1409,7 +1320,7 @@
                 aiBtn.disabled = true;
                 saveBtn.disabled = true;
                 photoMsg.style.color = '';
-                photoMsg.textContent = 'Arreglando foto con IA…';
+                photoMsg.textContent = 'Corrigiendo foto…';
 
                 try {
                     const formData = new FormData();
@@ -1446,7 +1357,7 @@
                     }
                     mType.textContent = 'image/jpeg';
 
-                    // Convert data URL back to File so /validate uses the fixed photo
+                    // Convert data URL back to File for /validate
                     const blobResp = await fetch(dataUrl);
                     const blob = await blobResp.blob();
                     const baseName = (currentFile.name || 'foto').replace(/\.[^/.]+$/, '');
@@ -1454,6 +1365,7 @@
                     const fixedFile = new File([blob], fixedName, { type: 'image/jpeg' });
                     currentFile = fixedFile;
 
+                    // reset approval
                     lastValidResult = null;
                     localStorage.removeItem('uma_photo_ok');
                     renderProgress();

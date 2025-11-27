@@ -290,17 +290,76 @@ app.post('/api/admin/teacher-schedule', async (req, res) => {
   }
 });
 
-// ---------- PHOTO VALIDATOR PROXY + LOG ----------
+// ---------- PHOTO VALIDATOR PROXY + LOG (FACULTAD / CARRERA support) ----------
 app.post('/validate', upload.single('image'), async (req, res) => {
   try {
     const file = req.file;
     const bodyFields = req.body || {};
     const dni = bodyFields.dni || 'unknown_user';
+    const code = bodyFields.code || '';
 
     if (!file) {
       return res.status(400).json({ ok: false, issues: ['No file provided'] });
     }
 
+    // ----- enrich with UMA data so we can store FACULTAD/CARRERA -----
+    let name = bodyFields.name || '';
+    let email = bodyFields.email || '';
+    let esp = bodyFields.esp || ''; // carrera
+    let facultad = bodyFields.facultad || bodyFields.faculty || '';
+
+    if (code && (!name || !email || !esp || !facultad)) {
+      try {
+        const r = await adminGetStudent({ code });
+        const root = r.data || {};
+        const s = root.data || root || {};
+
+        const firstName = s.name || s.nombres || s.nombre || '';
+        const lastName =
+          s.lastname ||
+          s.apellidos ||
+          s.apellido ||
+          [s.apellidoPaterno, s.apellidoMaterno].filter(Boolean).join(' ') ||
+          '';
+        const fullName = [firstName, lastName].filter(Boolean).join(' ');
+
+        if (!name && fullName) name = fullName;
+
+        if (!email) {
+          email =
+            s.email_institucional ||
+            s.emailInstitucional ||
+            s.email ||
+            '';
+        }
+
+        if (!esp) {
+          esp =
+            s.carrera ||
+            s.especialidad ||
+            s.specialtyName ||
+            s.schoolName ||
+            '';
+        }
+
+        if (!facultad) {
+          facultad =
+            s.facultad ||
+            s.faculty ||
+            s.facultyName ||
+            s.facultadNombre ||
+            '';
+        }
+      } catch (err) {
+        console.warn(
+          '[validate] adminGetStudent failed for code',
+          code,
+          err.message || err
+        );
+      }
+    }
+
+    // ----- call Python validator -----
     const formData = new FormData();
     formData.append('image', file.buffer, {
       filename: file.originalname,
@@ -320,7 +379,7 @@ app.post('/validate', upload.single('image'), async (req, res) => {
 
     const data = response.data || {};
 
-    // log submission info used by admin portal
+    // ----- log submission for admin portal -----
     try {
       const ok = !!data.ok;
       const category = data.category || (ok ? 'approved' : 'rejected');
@@ -339,12 +398,15 @@ app.post('/validate', upload.single('image'), async (req, res) => {
       }
 
       const now = new Date().toISOString();
+
       const submission = {
         dni,
-        code: bodyFields.code || '',
-        name: bodyFields.name || '',
-        email: bodyFields.email || '',
-        esp: bodyFields.esp || '',
+        code,
+        name,
+        email,
+        facultad,           // NEW
+        carrera: esp,       // NEW (also keep esp field below)
+        esp,
         category,
         ok,
         photoUrl,
@@ -411,7 +473,9 @@ app.post('/fix-photo', upload.single('image'), async (req, res) => {
     console.error('Fix-photo proxy error:', err);
     res.status(500).json({
       ok: false,
-      issues: ['Error interno al intentar corregir la foto automáticamente.']
+      issues: [
+        'Error interno al intentar corregir la foto automáticamente.'
+      ]
     });
   }
 });
@@ -441,8 +505,11 @@ app.post('/api/admin/generate-zip', async (req, res) => {
       selected = selected.filter((s) => s.dni && dniSet.has(String(s.dni)));
     }
 
-    console.log('[zip] approved in JSON:', list.filter(s => s.category === 'approved').length);
-    console.log('[zip] requested DNIs:', selected.map(s => s.dni));
+    console.log(
+      '[zip] approved in JSON:',
+      list.filter((s) => s.category === 'approved').length
+    );
+    console.log('[zip] requested DNIs:', selected.map((s) => s.dni));
 
     if (!selected.length) {
       return res
@@ -495,7 +562,11 @@ app.post('/api/admin/delete-submissions', async (req, res) => {
 });
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, validator: VALIDATOR_URL, photosRoot: PHOTOS_ROOT });
+  res.json({
+    ok: true,
+    validator: VALIDATOR_URL,
+    photosRoot: PHOTOS_ROOT
+  });
 });
 
 app.listen(PORT, () => {

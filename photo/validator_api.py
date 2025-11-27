@@ -2,19 +2,23 @@
 # -*- coding: utf-8 -*-
 
 """
-UMA Photo Validator API
+UMA Photo Validator API (no OpenCV, no Gemini)
 
-Rules:
-- Image must be a valid JPG/PNG
-- Detect 1 face (Haar)
-- Crop around the face to 240x288 aspect ratio
-- Resize to 240x288 pixels (rectangular, no oval)
-- Background mostly white/clear (background is cleaned to white)
-- FINAL JPEG <= UMA_MAX_BYTES (default 50KB)
-- If the ORIGINAL file is > UMA_MAX_BYTES => mark as INVALID
-  (user must use the "Arreglar con IA" button)
-- Save to photos/approved or photos/rejected
-- If approved, upload to Supabase Storage (bucket student-photos/approved)
+Behaviour:
+- Accept JPG/PNG.
+- Background must be plain white.
+- Produce final 240x288 JPEG, <= 50 KB.
+- /validate:
+    * checks original size and background
+    * crops to passport-style portrait
+    * resizes to 240x288 and compresses
+    * saves to photos/approved or photos/rejected
+    * if approved, uploads to Supabase
+- /fix-photo:
+    * runs the SAME background + passport-crop + compression pipeline
+    * does NOT save or upload
+    * returns data_url for preview
+    * if background is not white, returns same error text as /validate
 """
 
 import base64
@@ -22,12 +26,9 @@ import io
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Iterable, cast
 
-import cv2
-import numpy as np
 import requests
-from cv2 import data as cv2_data
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,22 +37,17 @@ from PIL import Image, ImageOps
 load_dotenv()
 
 # ---------------- Config ----------------
-# Final photo size (rectangular)
-TARGET_W, TARGET_H = 240, 288
+TARGET_W, TARGET_H = 240, 288  # final dimensions
 
-# Max bytes for BOTH original + final (50 KB by default)
-MAX_BYTES = int(os.getenv("UMA_MAX_BYTES", 50 * 1024))
+MAX_BYTES = int(os.getenv("UMA_MAX_BYTES", 50 * 1024))        # final JPEG
+MAX_ORIGINAL_BYTES = int(os.getenv("UMA_MAX_ORIG_BYTES", MAX_BYTES))
 
-# Local folder where Python saves files
 PHOTOS_DIR = os.getenv("UMA_PHOTOS_DIR", "photos")
 
-# Background / face config
-BORDER = 10
-WHITE_L_MIN = 75
-LAB_BG_DIST = 16
-FACE_CENTER_X = (0.28, 0.72)
-FACE_CENTER_Y = (0.26, 0.72)
-FACE_REL_H = (0.18, 0.72)
+# background check (brightness 0-255 on grayscale)
+BORDER_PIXELS = 20           # border thickness to inspect
+WHITE_THRESHOLD = 230        # pixel >= this is considered "white"
+BACKGROUND_MIN_WHITE = 0.80  # 80% of border pixels must be white
 
 os.makedirs(os.path.join(PHOTOS_DIR, "approved"), exist_ok=True)
 os.makedirs(os.path.join(PHOTOS_DIR, "rejected"), exist_ok=True)
@@ -61,12 +57,11 @@ try:
     from PIL.Image import Resampling
 
     RESAMPLE_LANCZOS = Resampling.LANCZOS
-except Exception:
+except Exception:  # pragma: no cover
     RESAMPLE_LANCZOS = getattr(Image, "LANCZOS", getattr(Image, "BILINEAR", 2))
 
 # Supabase config
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-# IMPORTANT: this must be the "Service role" key (starts with eyJ...)
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "student-photos")
 
@@ -75,12 +70,12 @@ def _log(*a: Any) -> None:
     print(*a, flush=True)
 
 
+def _kb(num_bytes: int) -> float:
+    return num_bytes / 1024.0
+
+
 # ---------------- Supabase helper ----------------
 def upload_to_supabase(jpg_bytes: bytes, path_in_bucket: str) -> Dict[str, Any]:
-    """
-    Upload JPEG bytes to Supabase Storage.
-    Returns dict with ok/public_url or error.
-    """
     info: Dict[str, Any] = {"ok": False}
 
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
@@ -96,7 +91,7 @@ def upload_to_supabase(jpg_bytes: bytes, path_in_bucket: str) -> Dict[str, Any]:
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
             "Content-Type": "image/jpeg",
-            "x-upsert": "true",  # overwrite if already exists
+            "x-upsert": "true",
         }
 
         resp = requests.post(url, headers=headers, data=jpg_bytes, timeout=30)
@@ -115,22 +110,10 @@ def upload_to_supabase(jpg_bytes: bytes, path_in_bucket: str) -> Dict[str, Any]:
         info.update({"ok": True, "public_url": public_url, "status": resp.status_code})
         _log("[supabase] uploaded:", public_url)
         return info
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         info["error"] = repr(e)
         _log("[supabase] upload exception:", repr(e))
         return info
-
-
-# ---------------- FastAPI app ----------------
-app = FastAPI(title="UMA Photo Validator")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # adjust for prod
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 # ---------------- Helpers ----------------
@@ -138,109 +121,79 @@ def sanitize_name(s: Optional[str]) -> str:
     return re.sub(r"[^\w\-]", "", (s or "").strip(), flags=re.ASCII)
 
 
-def load_pil_and_size(upload: UploadFile) -> Tuple[Image.Image, int]:
-    """
-    Read the uploaded file once, returning (PIL_image_RGB, original_num_bytes).
-    """
-    data = upload.file.read()
-    pil = Image.open(io.BytesIO(data))
+def load_pil(upload: UploadFile, raw_bytes: Optional[bytes] = None) -> Tuple[Image.Image, bytes]:
+    if raw_bytes is None:
+        raw_bytes = upload.file.read()
+    pil = Image.open(io.BytesIO(raw_bytes))
     if hasattr(ImageOps, "exif_transpose"):
         pil = ImageOps.exif_transpose(pil)
-    return pil.convert("RGB"), len(data)
+    return pil.convert("RGB"), raw_bytes
 
 
-def to_np(img: Image.Image) -> np.ndarray:
-    return np.array(img)
-
-
-def detect_face(bgr: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
-    """Return (x,y,w,h) of biggest detected face, or None."""
-    try:
-        cascade_path = os.path.join(
-            cv2_data.haarcascades, "haarcascade_frontalface_default.xml"
-        )
-        cas = cv2.CascadeClassifier(cascade_path)
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        faces = cas.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5, flags=cv2.CASCADE_SCALE_IMAGE
-        )
-        if len(faces) == 0:
-            return None
-        faces = sorted(faces, key=lambda r: int(r[2]) * int(r[3]), reverse=True)
-        x, y, w, h = [int(v) for v in faces[0]]
-        return (x, y, w, h)
-    except Exception:
-        return None
-
-
-def crop_to_ratio(rgb: np.ndarray, face: Optional[Tuple[int, int, int, int]]) -> np.ndarray:
+def border_white_ratio(pil_img: Image.Image) -> float:
     """
-    Crop image to TARGET_W:TARGET_H (240x288) keeping the face centered.
-    Result is a normal rectangle (no oval).
+    Inspect a border around the image and return the fraction (0.0–1.0)
+    of pixels that are "bright enough" to be considered white.
     """
-    h, w = rgb.shape[:2]
-    target = TARGET_W / TARGET_H
-    r = w / h
+    w, h = pil_img.size
+    b = max(2, min(BORDER_PIXELS, w // 4, h // 4))
 
-    if r > target:
-        # Image too wide -> crop left/right
-        new_w = int(h * target)
-        new_h = h
-        cx = w // 2
-        if face:
-            cx = face[0] + face[2] // 2
-        x1 = max(0, min(w - new_w, int(cx - new_w // 2)))
-        y1 = 0
-    else:
-        # Image too tall -> crop top/bottom
+    gray = pil_img.convert("L")
+
+    def frac_white(region: Image.Image) -> float:
+        # getdata() returns an ImagingCore which *is* iterable at runtime,
+        # but we cast it so static analysis is happy.
+        data_iter = cast(Iterable[int], region.getdata())
+        data_list = list(data_iter)
+        total = len(data_list)
+        if total == 0:
+            return 0.0
+        white = sum(1 for v in data_list if v >= WHITE_THRESHOLD)
+        return white / total
+
+    top = gray.crop((0, 0, w, b))
+    bottom = gray.crop((0, h - b, w, h))
+    left = gray.crop((0, 0, b, h))
+    right = gray.crop((w - b, 0, w, h))
+
+    vals = [frac_white(r) for r in (top, bottom, left, right)]
+    return sum(vals) / len(vals)
+
+
+def passport_crop(pil_img: Image.Image) -> Image.Image:
+    """
+    Crop image to a passport-style portrait:
+    - Zoom in to head & shoulders.
+    - Keep aspect ratio TARGET_W : TARGET_H (240x288).
+    - Slightly bias crop towards the top (more space below shoulders).
+    """
+    w, h = pil_img.size
+    target_ratio = TARGET_W / TARGET_H
+
+    # Start by cropping some of the height to zoom in (80% of height)
+    crop_factor = 0.8 if h > TARGET_H else 1.0
+    new_h = max(int(h * crop_factor), TARGET_H)
+    new_w = int(new_h * target_ratio)
+
+    if new_w > w:
+        # Image is too narrow; fall back to width-limited crop
         new_w = w
-        new_h = int(w / target)
-        cy = h // 2
-        if face:
-            cy = face[1] + face[3] // 2
-        x1 = 0
-        y1 = max(0, min(h - new_h, int(cy - new_h // 2)))
+        new_h = int(new_w / target_ratio)
 
-    return rgb[y1 : y1 + new_h, x1 : x1 + new_w]
+    # Horizontal: center
+    left = max(0, (w - new_w) // 2)
+    right = left + new_w
 
+    # Vertical: bias up a bit (15% margin at top, 85% below)
+    max_top = h - new_h
+    top = int(max_top * 0.15) if max_top > 0 else 0
+    top = max(0, min(top, max_top))
+    bottom = top + new_h
 
-def rgb_to_lab(a: np.ndarray) -> np.ndarray:
-    return cv2.cvtColor(a, cv2.COLOR_RGB2LAB)
-
-
-def whiten_background(rgb: np.ndarray) -> Tuple[np.ndarray, float]:
-    """
-    Try to make background white.
-    It samples the border colors and turns pixels similar to that into pure white.
-    Returns (image, % of border that was already bright).
-    """
-    h, w = rgb.shape[:2]
-    b = min(BORDER, h // 4, w // 4)
-    border = np.concatenate(
-        [
-            rgb[:b, :, :].reshape(-1, 3),
-            rgb[-b:, :, :].reshape(-1, 3),
-            rgb[:, :b, :].reshape(-1, 3),
-            rgb[:, -b:, :].reshape(-1, 3),
-        ],
-        axis=0,
-    ).astype(np.uint8)
-
-    lab_img = rgb_to_lab(rgb)
-    lab_border = rgb_to_lab(border.reshape(-1, 1, 3)).reshape(-1, 3)
-    bg_lab = np.median(lab_border, axis=0)
-
-    white_pct = (lab_border[:, 0] >= WHITE_L_MIN).sum() / lab_border.shape[0] * 100.0
-    dist = np.linalg.norm(lab_img - bg_lab[None, None, :], axis=2)
-    mask = dist < LAB_BG_DIST
-
-    out = rgb.copy()
-    out[mask] = (255, 255, 255)
-    return out, float(white_pct)
+    return pil_img.crop((left, top, right, bottom))
 
 
 def jpg_under_size(pil_img: Image.Image, limit: int = MAX_BYTES) -> bytes:
-    """Binary search JPEG quality so that file <= limit bytes if possible."""
     lo, hi = 35, 95
     best: Optional[bytes] = None
     while lo <= hi:
@@ -260,27 +213,63 @@ def jpg_under_size(pil_img: Image.Image, limit: int = MAX_BYTES) -> bytes:
     return buf.getvalue()
 
 
-def face_rules(
-    rgb: np.ndarray, face: Optional[Tuple[int, int, int, int]]
-) -> List[str]:
-    """Return list of face-related issues, empty if OK."""
+def run_pipeline(
+    pil_img: Image.Image,
+    *,
+    require_white_bg: bool = True,
+) -> Tuple[bytes, Dict[str, Any]]:
+    """
+    Core pipeline:
+      - check background whiteness
+      - crop to passport-style portrait
+      - resize to TARGET_W x TARGET_H
+      - compress under MAX_BYTES
+    """
     issues: List[str] = []
-    if face is None:
-        issues.append("No se detectó un rostro claro.")
-        return issues
-    x, y, w, h = face
-    H, W = rgb.shape[:2]
-    cx, cy = x + w / 2, y + h / 2
-    if not (W * FACE_CENTER_X[0] <= cx <= W * FACE_CENTER_X[1]):
-        issues.append("Rostro no está centrado horizontalmente.")
-    if not (H * FACE_CENTER_Y[0] <= cy <= H * FACE_CENTER_Y[1]):
-        issues.append("Rostro no está centrado verticalmente.")
-    if not (H * FACE_REL_H[0] <= h <= H * FACE_REL_H[1]):
-        issues.append("Rostro demasiado pequeño o grande.")
-    return issues
+
+    # 1) background check
+    white_ratio = border_white_ratio(pil_img)
+    background_ok = white_ratio >= BACKGROUND_MIN_WHITE
+
+    if require_white_bg and not background_ok:
+        issues.append(
+            "The photo should be taken in front of a plain white wall, "
+            "with no objects or colors in the background. Take the photo "
+            "again using a completely white background."
+        )
+
+    # 2) crop to passport style
+    cropped = passport_crop(pil_img)
+
+    # 3) resize to final size
+    out_img = cropped.resize((TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS)
+
+    # 4) compress under limit
+    jpg = jpg_under_size(out_img, MAX_BYTES)
+
+    info: Dict[str, Any] = {
+        "issues": issues,
+        "width": TARGET_W,
+        "height": TARGET_H,
+        "bytes": len(jpg),
+        "white_ratio": white_ratio,
+        "background_ok": background_ok,
+    }
+    return jpg, info
 
 
-# ---------------- Routes ----------------
+# ---------------- FastAPI app ----------------
+app = FastAPI(title="UMA Photo Validator (no OpenCV)")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.get("/health")
 def health() -> Dict[str, Any]:
     return {
@@ -288,6 +277,7 @@ def health() -> Dict[str, Any]:
         "msg": "UMA validator healthy",
         "target": [TARGET_W, TARGET_H],
         "max_bytes": MAX_BYTES,
+        "max_original_bytes": MAX_ORIGINAL_BYTES,
         "supabase": {
             "url": SUPABASE_URL,
             "bucket": SUPABASE_BUCKET,
@@ -296,26 +286,17 @@ def health() -> Dict[str, Any]:
     }
 
 
+# ---------------- /validate ----------------
 @app.post("/validate")
 def validate(
     dni: Optional[str] = Form(None, description="Student DNI used as output filename"),
     image: UploadFile = File(...),
 ) -> Dict[str, Any]:
-    """
-    Main validator endpoint.
-
-    Request: multipart/form-data with fields:
-      - image: file
-      - dni: student identifier (used for filename)
-    """
     dni = sanitize_name(dni) or "unknown_user"
-    issues: List[str] = []
-    orig_bytes = 0
 
     try:
-        # 1) Load + measure original size
         try:
-            pil_in, orig_bytes = load_pil_and_size(image)
+            pil_in, raw_bytes = load_pil(image)
         except Exception:
             return {
                 "ok": False,
@@ -323,49 +304,30 @@ def validate(
                 "bytes": 0,
             }
 
-        rgb = to_np(pil_in)
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        original_size = len(raw_bytes)
 
-        # 2) ORIGINAL size rule: if original > MAX_BYTES => invalid
-        if orig_bytes > MAX_BYTES:
-            issues.append(
-                f"El archivo original pesa {orig_bytes / 1024:.1f} KB; "
-                f"debe ser ≤ {MAX_BYTES // 1024} KB. "
-                "Usa el botón \"Arreglar con IA\" o selecciona otra foto."
+        # Run main pipeline (includes background check + passport crop)
+        jpg, info = run_pipeline(pil_in, require_white_bg=True)
+        issues: List[str] = list(info.get("issues", []))
+
+        # Extra check on original size for friendly message
+        if original_size > MAX_ORIGINAL_BYTES:
+            limit_kb = MAX_ORIGINAL_BYTES // 1024
+            issues.insert(
+                0,
+                (
+                    "Foto inválida: El archivo original pesa "
+                    f"{_kb(original_size):.1f} KB; debe ser ≤ {limit_kb} KB. "
+                    'Usa el botón "Arreglar con IA" o selecciona otra foto.'
+                ),
             )
 
-        # 3) Face detection + rules
-        face = detect_face(bgr)
-        issues += face_rules(rgb, face)
-
-        # 4) Crop to target ratio around face
-        cropped = crop_to_ratio(rgb, face)
-
-        # 5) Whiten background
-        whitened, white_pct = whiten_background(cropped)
-        if white_pct < 60:
-            issues.append("Fondo no es suficientemente claro/blanco.")
-
-        # 6) Resize to final size (rectangle)
-        pil_out = Image.fromarray(whitened).resize(
-            (TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS
-        )
-
-        # 7) Compress under MAX_BYTES
-        jpg = jpg_under_size(pil_out, MAX_BYTES)
-
-        if len(jpg) > MAX_BYTES:
-            issues.append(
-                f"La foto final debe pesar ≤ {MAX_BYTES // 1024} KB "
-                f"(actual: {len(jpg) / 1024:.1f} KB)."
-            )
-
-        ok = (len(issues) == 0) and (len(jpg) <= MAX_BYTES)
+        ok = len(issues) == 0 and len(jpg) <= MAX_BYTES
 
         if not ok and not issues:
             issues.append("La foto no cumple con los criterios requeridos.")
 
-        # 8) Save locally
+        # Save locally
         bucket = "approved" if ok else "rejected"
         ts = int(time.time())
         fname = f"{dni}.jpg" if ok else f"{dni}_{ts}.jpg"
@@ -375,10 +337,10 @@ def validate(
         with open(save_path, "wb") as f:
             f.write(jpg)
 
-        # 9) Base64 data URL (for UI / debugging)
+        # Base64 data URL
         data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
 
-        # 10) Supabase upload (only for approved)
+        # Supabase upload for approved photos
         supabase_info: Dict[str, Any] = {}
         supabase_url: Optional[str] = None
         if ok:
@@ -395,8 +357,8 @@ def validate(
             "issues=",
             issues,
             "orig_bytes=",
-            orig_bytes,
-            "final_bytes=",
+            original_size,
+            "bytes_final=",
             len(jpg),
             "local=",
             save_path,
@@ -407,10 +369,9 @@ def validate(
         return {
             "ok": ok,
             "issues": issues,
-            "width": TARGET_W,
-            "height": TARGET_H,
-            "bytes": len(jpg),
-            "original_bytes": orig_bytes,
+            "width": info.get("width", TARGET_W),
+            "height": info.get("height", TARGET_H),
+            "bytes": info.get("bytes", len(jpg)),
             "category": bucket,
             "filename": fname,
             "relative_path": save_path,
@@ -419,8 +380,7 @@ def validate(
             "supabase": supabase_info,
         }
 
-    except Exception as e:
-        # Safety net: always return JSON, never raw error
+    except Exception as e:  # pragma: no cover
         _log("[validator] unexpected error:", repr(e))
         return {
             "ok": False,
@@ -429,15 +389,21 @@ def validate(
         }
 
 
+# ---------------- /fix-photo ----------------
 @app.post("/fix-photo")
-def fix_photo(image: UploadFile = File(...)) -> Dict[str, Any]:
+def fix_photo(
+    image: UploadFile = File(...),
+) -> Dict[str, Any]:
     """
-    Try to automatically correct a photo (crop, white background, resize, compress).
-    This does NOT save or upload anything; it's only for the UI "Arreglar con IA".
+    Used by the student's "Arreglar con IA / Fix with AI" button.
+
+    - Uses EXACTLY the same background rule as /validate.
+    - Crops to passport style and compresses under 50 KB.
+    - Does NOT save or upload anything.
     """
     try:
         try:
-            pil_in, orig_bytes = load_pil_and_size(image)
+            pil_in, raw_bytes = load_pil(image)
         except Exception:
             return {
                 "ok": False,
@@ -445,62 +411,46 @@ def fix_photo(image: UploadFile = File(...)) -> Dict[str, Any]:
                 "bytes": 0,
             }
 
-        rgb = to_np(pil_in)
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-        face = detect_face(bgr)
+        jpg, info = run_pipeline(pil_in, require_white_bg=True)
+        issues: List[str] = list(info.get("issues", []))
 
-        if face is None:
-            return {
-                "ok": False,
-                "issues": ["No se detectó un rostro claro para corregir la foto."],
-                "bytes": 0,
-            }
-
-        cropped = crop_to_ratio(rgb, face)
-        whitened, _ = whiten_background(cropped)
-        pil_out = Image.fromarray(whitened).resize(
-            (TARGET_W, TARGET_H), resample=RESAMPLE_LANCZOS
-        )
-        jpg = jpg_under_size(pil_out, MAX_BYTES)
-        final_bytes = len(jpg)
-
-        if final_bytes > MAX_BYTES:
-            return {
-                "ok": False,
-                "issues": [
-                    f"No se pudo reducir el tamaño de la foto por debajo de {MAX_BYTES // 1024} KB."
-                ],
-                "bytes": final_bytes,
-            }
+        ok = len(issues) == 0 and len(jpg) <= MAX_BYTES
 
         data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
 
         _log(
             "[fix-photo]",
+            "ok=",
+            ok,
             "orig_bytes=",
-            orig_bytes,
-            "final_bytes=",
-            final_bytes,
+            len(raw_bytes),
+            "bytes_final=",
+            len(jpg),
+            "white_ratio=",
+            info.get("white_ratio"),
+            "issues=",
+            issues,
         )
 
         return {
-            "ok": True,
-            "issues": [],
-            "width": TARGET_W,
-            "height": TARGET_H,
-            "bytes": final_bytes,
+            "ok": ok,
+            "issues": issues,
+            "width": info.get("width", TARGET_W),
+            "height": info.get("height", TARGET_H),
+            "bytes": info.get("bytes", len(jpg)),
             "data_url": data_url,
         }
-    except Exception as e:
+
+    except Exception as e:  # pragma: no cover
         _log("[fix-photo] unexpected error:", repr(e))
         return {
             "ok": False,
-            "issues": [f"Error interno al corregir la foto: {repr(e)}"],
+            "issues": [f"Error interno al intentar corregir la foto: {repr(e)}"],
             "bytes": 0,
         }
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import uvicorn
 
     uvicorn.run("validator_api:app", host="127.0.0.1", port=8000, reload=True)
