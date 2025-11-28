@@ -269,6 +269,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root endpoint so Render / browsers don't see 404 on "/"
+@app.get("/")
+def root() -> Dict[str, Any]:
+    return {
+        "ok": True,
+        "message": "UMA Photo Validator running",
+        "endpoints": {
+            "health": "/health",
+            "validate": "/validate",
+            "fix_photo": "/fix-photo",
+        },
+    }
+
 
 @app.get("/health")
 def health() -> Dict[str, Any]:
@@ -453,4 +466,5 @@ def fix_photo(
 if __name__ == "__main__":  # pragma: no cover
     import uvicorn
 
+    # Local run:  uvicorn validator_api:app --reload
     uvicorn.run("validator_api:app", host="127.0.0.1", port=8000, reload=True)
