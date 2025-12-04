@@ -13,7 +13,6 @@
       --ring: #ffd3dd;
       --muted: #6b7280;
       --text: #0f172a;
-      /* softer pink background instead of gray */
       --bg: #fff5f8;
       --card: #ffffff;
       --shadow: 0 20px 60px rgba(15, 23, 42, .06)
@@ -25,7 +24,6 @@
 
     body {
       margin: 0;
-      /* pink + white background similar to student portal */
       background: radial-gradient(circle at top left, #ffe3ee 0, #fffdfd 45%, #ffe3ee 100%);
       color: var(--text);
       font: 14px/1.55 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -428,6 +426,17 @@
       cursor: pointer;
       background: #fff;
     }
+
+    /* Código + checkbox inline */
+    .code-with-checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .code-with-checkbox input {
+      margin: 0;
+    }
   </style>
 </head>
 
@@ -480,8 +489,12 @@
           <table>
             <thead>
               <tr>
-                <th></th>
-                <th>Código</th>
+                <th>
+                  <label class="code-with-checkbox">
+                    <input type="checkbox" id="selectAllApproved">
+                    <span>Código</span>
+                  </label>
+                </th>
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>FACULTAD</th>
@@ -537,8 +550,12 @@
           <table>
             <thead>
               <tr>
-                <th></th>
-                <th>Código</th>
+                <th>
+                  <label class="code-with-checkbox">
+                    <input type="checkbox" id="selectAllSunedu">
+                    <span>Código</span>
+                  </label>
+                </th>
                 <th>Nombre</th>
                 <th>DNI</th>
                 <th>Estado SUNEDU</th>
@@ -612,7 +629,7 @@
         setTimeout(() => el.remove(), 4000);
       }
 
-      // ---- session chip: "Conectado: código/email" ----
+      // ---- session chip ----
       (function guard() {
         const role = localStorage.getItem('uma_session_role');
         const email = localStorage.getItem('uma_session_email') || '';
@@ -708,11 +725,11 @@
 
         if (!rows.length) {
           if (kind === 'approved') {
-            renderEmptyRow(tbodyId, 9, 'Sin solicitudes aprobadas aún.');
+            renderEmptyRow(tbodyId, 8, 'Sin solicitudes aprobadas aún.');
           } else if (kind === 'rejected') {
             renderEmptyRow(tbodyId, 7, 'Sin solicitudes rechazadas.');
           } else {
-            renderEmptyRow(tbodyId, 7, 'No hay aprobados para SUNEDU.');
+            renderEmptyRow(tbodyId, 6, 'No hay aprobados para SUNEDU.');
           }
           return;
         }
@@ -730,8 +747,12 @@
 
             return `
               <tr>
-                <td><input type="checkbox" data-dni="${r.dni || ''}"></td>
-                <td>${code}</td>
+                <td>
+                  <label class="code-with-checkbox">
+                    <input type="checkbox" data-dni="${r.dni || ''}">
+                    <span>${code}</span>
+                  </label>
+                </td>
                 <td>${name}</td>
                 <td>${email}</td>
                 <td>${facultad}</td>
@@ -759,8 +780,12 @@
         } else if (kind === 'sunedu') {
           tb.innerHTML = rows.map((r, i) => `
             <tr>
-              <td><input type="checkbox" data-dni="${r.dni || ''}"></td>
-              <td>${r.codigo || r.code || '—'}</td>
+              <td>
+                <label class="code-with-checkbox">
+                  <input type="checkbox" data-dni="${r.dni || ''}">
+                  <span>${r.codigo || r.code || '—'}</span>
+                </label>
+              </td>
               <td>${r.name || '—'}</td>
               <td>${r.dni || '—'}</td>
               <td>
@@ -773,6 +798,7 @@
             </tr>`).join('');
         }
 
+        // attach view button handlers
         tb.querySelectorAll('.viewBtn').forEach(btn => {
           const kindBtn = btn.dataset.kind;
           const idx = parseInt(btn.dataset.index, 10);
@@ -814,12 +840,14 @@
         if (kind === 'approved') {
           renderTable('approvedRows', filtered, 'approved', { approved: filtered });
           document.getElementById('countApproved').textContent = `${filtered.length} resultado(s)`;
+          updateHeaderCheckbox('approved');
         } else if (kind === 'rejected') {
           renderTable('rejectedRows', filtered, 'rejected', { rejected: filtered });
           document.getElementById('countRejected').textContent = `${filtered.length} resultado(s)`;
         } else if (kind === 'sunedu') {
           renderTable('suneduRows', filtered, 'sunedu', { sunedu: filtered });
           document.getElementById('countSunedu').textContent = `${filtered.length} aprobado(s)`;
+          updateHeaderCheckbox('sunedu');
         }
       }
 
@@ -849,7 +877,6 @@
 
           datasets = { approved, rejected, sunedu };
 
-          // render with current filters (or all if empty)
           applyFilter('approved');
           applyFilter('rejected');
           applyFilter('sunedu');
@@ -945,7 +972,38 @@
         return boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
       }
 
-      // --- Export CSV: Código, DNI, Nombre, Correo, FACULTAD, CARRERA, Supabase URL ---
+      // --- header checkbox state (indeterminate / all / none) ---
+      function updateHeaderCheckbox(kind) {
+        const headerId = kind === 'approved'
+          ? 'selectAllApproved'
+          : kind === 'sunedu'
+            ? 'selectAllSunedu'
+            : null;
+        const tbodyId = kind === 'approved'
+          ? 'approvedRows'
+          : kind === 'sunedu'
+            ? 'suneduRows'
+            : null;
+
+        if (!headerId || !tbodyId) return;
+
+        const header = document.getElementById(headerId);
+        const tbody = document.getElementById(tbodyId);
+        if (!header || !tbody) return;
+
+        const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
+        if (!boxes.length) {
+          header.checked = false;
+          header.indeterminate = false;
+          return;
+        }
+
+        const checkedCount = boxes.filter(b => b.checked).length;
+        header.checked = checkedCount === boxes.length;
+        header.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+      }
+
+      // --- Export CSV ---
       function exportApprovedToCSV() {
         const rows = datasets.approved || [];
         if (!rows.length) {
@@ -1008,7 +1066,7 @@
         deleteByDniList(dniList);
       });
 
-      // --- hook up the three search boxes for live filtering ---
+      // --- live search boxes ---
       const searchApproved = document.querySelector('#route-approved .search');
       const searchRejected = document.querySelector('#route-rejected .search');
       const searchSunedu = document.querySelector('#route-sunedu .search');
@@ -1031,6 +1089,52 @@
         searchSunedu.addEventListener('input', (e) => {
           currentFilters.sunedu = e.target.value;
           applyFilter('sunedu');
+        });
+      }
+
+      // --- "select all" header checkboxes ---
+      const selectAllApproved = document.getElementById('selectAllApproved');
+      if (selectAllApproved) {
+        selectAllApproved.addEventListener('change', (e) => {
+          const checked = e.target.checked;
+          const tbody = document.getElementById('approvedRows');
+          if (!tbody) return;
+          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => {
+            cb.checked = checked;
+          });
+          e.target.indeterminate = false;
+        });
+      }
+
+      const selectAllSunedu = document.getElementById('selectAllSunedu');
+      if (selectAllSunedu) {
+        selectAllSunedu.addEventListener('change', (e) => {
+          const checked = e.target.checked;
+          const tbody = document.getElementById('suneduRows');
+          if (!tbody) return;
+          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => {
+            cb.checked = checked;
+          });
+          e.target.indeterminate = false;
+        });
+      }
+
+      // update header checkbox when a row checkbox changes
+      const approvedRowsEl = document.getElementById('approvedRows');
+      if (approvedRowsEl) {
+        approvedRowsEl.addEventListener('change', (e) => {
+          if (e.target.matches('input[type="checkbox"][data-dni]')) {
+            updateHeaderCheckbox('approved');
+          }
+        });
+      }
+
+      const suneduRowsEl = document.getElementById('suneduRows');
+      if (suneduRowsEl) {
+        suneduRowsEl.addEventListener('change', (e) => {
+          if (e.target.matches('input[type="checkbox"][data-dni]')) {
+            updateHeaderCheckbox('sunedu');
+          }
         });
       }
 
