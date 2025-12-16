@@ -10,6 +10,7 @@ const cors = require('cors');
 const multer = require('multer');
 const FormData = require('form-data');
 const axios = require('axios');
+const { Pool } = require('pg');
 
 // helper that builds rich SUNEDU ZIPs
 const { createAdminZip } = require('./adminZipHelper');
@@ -29,18 +30,38 @@ const {
 const {
   PORT = 5000,
   SESSION_SECRET = 'change-this',
-  VALIDATOR_URL: ENV_VALIDATOR_URL
+  VALIDATOR_URL: ENV_VALIDATOR_URL,
+  UMA_DATABASE_URL,
+  DATABASE_URL,
+  POSTGRES_URL
 } = process.env;
 
 // Python validator URL (FastAPI)
 const VALIDATOR_URL = ENV_VALIDATOR_URL || 'http://127.0.0.1:8000';
+
+// ------------ Database (Supabase Postgres) ------------
+const DB_URL = UMA_DATABASE_URL || DATABASE_URL || POSTGRES_URL || '';
+const DB_ENABLED = !!DB_URL;
+
+let pool = null;
+if (DB_ENABLED) {
+  pool = new Pool({
+    connectionString: DB_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+  pool.on('error', (err) => {
+    console.error('[db] pool error', err);
+  });
+} else {
+  console.warn('[db] No database URL configured. Falling back to submissions.json only.');
+}
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ---------- paths ----------
 const ROOT_DIR = path.join(__dirname, '..');
-// IMPORTANT: Python validator writes here: photo/photos/{approved|rejected}
+// Python validator writes here: photo/photos/{approved|rejected}
 const PHOTOS_ROOT = path.join(ROOT_DIR, 'photo', 'photos');
 const SUBMISSIONS_PATH = path.join(ROOT_DIR, 'photo', 'submissions.json');
 
@@ -51,7 +72,58 @@ if (!fs.existsSync(ZIP_OUTPUT_DIR)) {
 }
 
 // ---------- submissions helpers ----------
-async function loadSubmissions() {
+async function loadSubmissionsFromDb() {
+  if (!DB_ENABLED || !pool) return [];
+
+  const q = `
+    select
+      dni,
+      codigo,
+      name,
+      email,
+      facultad,
+      carrera,
+      category,
+      issues,
+      supabase_url,
+      photo_filename,
+      sunedu_status,
+      updated_at
+    from uma_submissions
+    order by updated_at desc
+  `;
+  const { rows } = await pool.query(q);
+  return rows.map((row) => {
+    const issues = Array.isArray(row.issues)
+      ? row.issues
+      : row.issues
+      ? row.issues
+      : [];
+    const category = row.category || 'approved';
+    const photoUrl =
+      row.supabase_url ||
+      (row.photo_filename ? `/photos/${category}/${row.photo_filename}` : null);
+
+    return {
+      dni: row.dni,
+      code: row.codigo,
+      codigo: row.codigo,
+      name: row.name,
+      email: row.email,
+      facultad: row.facultad,
+      carrera: row.carrera,
+      category,
+      issues,
+      supabase_url: row.supabase_url,
+      photo_filename: row.photo_filename,
+      suneduStatus: row.sunedu_status,
+      updatedAt: row.updated_at,
+      photoUrl
+    };
+  });
+}
+
+async function loadSubmissionsFromFile() {
   try {
     const txt = await fsp.readFile(SUBMISSIONS_PATH, 'utf8');
     const parsed = JSON.parse(txt);
@@ -65,7 +137,7 @@ async function loadSubmissions() {
   }
 }
 
-async function saveSubmissions(list) {
+async function saveSubmissionsToFile(list) {
   try {
     await fsp.mkdir(path.dirname(SUBMISSIONS_PATH), { recursive: true });
     await fsp.writeFile(
@@ -76,6 +148,72 @@ async function saveSubmissions(list) {
   } catch (err) {
     console.error('[submissions] write error:', err);
   }
+}
+
+async function loadSubmissions() {
+  if (DB_ENABLED) {
+    return loadSubmissionsFromDb();
+  }
+  return loadSubmissionsFromFile();
+}
+
+async function upsertSubmissionInDb(submission) {
+  if (!DB_ENABLED || !pool) return;
+
+  const issues = Array.isArray(submission.issues)
+    ? submission.issues
+    : submission.issues
+    ? submission.issues
+    : [];
+
+  const suneduStatus = submission.suneduStatus || 'Pendiente';
+
+  const q = `
+    insert into uma_submissions (
+      dni,
+      codigo,
+      name,
+      email,
+      facultad,
+      carrera,
+      category,
+      issues,
+      supabase_url,
+      photo_filename,
+      sunedu_status,
+      updated_at
+    ) values (
+      $1, $2, $3, $4, $5, $6, $7,
+      $8, $9, $10, $11, now()
+    )
+    on conflict (dni) do update set
+      codigo = excluded.codigo,
+      name = excluded.name,
+      email = excluded.email,
+      facultad = excluded.facultad,
+      carrera = excluded.carrera,
+      category = excluded.category,
+      issues = excluded.issues,
+      supabase_url = excluded.supabase_url,
+      photo_filename = excluded.photo_filename,
+      sunedu_status = excluded.sunedu_status,
+      updated_at = now()
+  `;
+  const params = [
+    submission.dni,
+    submission.code || submission.codigo || null,
+    submission.name || null,
+    submission.email || null,
+    submission.facultad || null,
+    submission.carrera || submission.esp || null,
+    submission.category || 'approved',
+    issues,
+    submission.supabase_url || null,
+    submission.filename || submission.photo_filename || null,
+    suneduStatus
+  ];
+
+  await pool.query(q, params);
 }
 
 // Find the approved JPG for a given DNI:
@@ -111,6 +249,32 @@ async function deletePhotoFile(absPath) {
   } catch (err) {
     if (err.code !== 'ENOENT') console.warn('[delete] unlink error:', err);
   }
+}
+
+async function deleteSubmissionsInDb(dniList) {
+  if (!DB_ENABLED || !pool || !Array.isArray(dniList) || !dniList.length) {
+    return 0;
+  }
+  const q = `
+    delete from uma_submissions
+    where dni = any($1)
+  `;
+  const { rowCount } = await pool.query(q, [dniList]);
+  return rowCount || 0;
+}
+
+async function markSuneduSentInDb(dniList) {
+  if (!DB_ENABLED || !pool || !Array.isArray(dniList) || !dniList.length) {
+    return 0;
+  }
+  const q = `
+    update uma_submissions
+    set sunedu_status = 'Enviado',
+        updated_at = now()
+    where dni = any($1)
+  `;
+  const { rowCount } = await pool.query(q, [dniList]);
+  return rowCount || 0;
 }
 
 // ---------- middleware ----------
@@ -290,7 +454,7 @@ app.post('/api/admin/teacher-schedule', async (req, res) => {
   }
 });
 
-// ---------- PHOTO VALIDATOR PROXY + LOG (FACULTAD / CARRERA support) ----------
+// ---------- PHOTO VALIDATOR PROXY + LOG ----------
 app.post('/validate', upload.single('image'), async (req, res) => {
   try {
     const file = req.file;
@@ -302,10 +466,10 @@ app.post('/validate', upload.single('image'), async (req, res) => {
       return res.status(400).json({ ok: false, issues: ['No file provided'] });
     }
 
-    // ----- enrich with UMA data so we can store FACULTAD/CARRERA -----
+    // ----- enrich with UMA data -----
     let name = bodyFields.name || '';
     let email = bodyFields.email || '';
-    let esp = bodyFields.esp || ''; // carrera
+    let esp = bodyFields.esp || '';
     let facultad = bodyFields.facultad || bodyFields.faculty || '';
 
     if (code && (!name || !email || !esp || !facultad)) {
@@ -379,7 +543,7 @@ app.post('/validate', upload.single('image'), async (req, res) => {
 
     const data = response.data || {};
 
-    // ----- log submission for admin portal -----
+    // ----- log submission -----
     try {
       const ok = !!data.ok;
       const category = data.category || (ok ? 'approved' : 'rejected');
@@ -404,8 +568,8 @@ app.post('/validate', upload.single('image'), async (req, res) => {
         code,
         name,
         email,
-        facultad,           // NEW
-        carrera: esp,       // NEW (also keep esp field below)
+        facultad,
+        carrera: esp,
         esp,
         category,
         ok,
@@ -415,19 +579,23 @@ app.post('/validate', upload.single('image'), async (req, res) => {
         issues: Array.isArray(data.issues) ? data.issues : [],
         data_url: data.data_url || null,
         supabase_url: data.supabase_url || null,
+        suneduStatus: 'Pendiente',
         updatedAt: now
       };
 
-      const list = await loadSubmissions();
-      const idxExisting = list.findIndex((s) => s.dni === dni);
-      if (idxExisting >= 0) {
-        list[idxExisting] = { ...list[idxExisting], ...submission };
+      if (DB_ENABLED) {
+        await upsertSubmissionInDb(submission);
       } else {
-        submission.createdAt = now;
-        submission.suneduStatus = 'Pendiente';
-        list.push(submission);
+        const list = await loadSubmissionsFromFile();
+        const idxExisting = list.findIndex((s) => s.dni === dni);
+        if (idxExisting >= 0) {
+          list[idxExisting] = { ...list[idxExisting], ...submission };
+        } else {
+          submission.createdAt = now;
+          list.push(submission);
+        }
+        await saveSubmissionsToFile(list);
       }
-      await saveSubmissions(list);
     } catch (err) {
       console.error('[submissions] log error:', err);
     }
@@ -506,7 +674,7 @@ app.post('/api/admin/generate-zip', async (req, res) => {
     }
 
     console.log(
-      '[zip] approved in JSON:',
+      '[zip] approved in storage:',
       list.filter((s) => s.category === 'approved').length
     );
     console.log('[zip] requested DNIs:', selected.map((s) => s.dni));
@@ -544,19 +712,63 @@ app.post('/api/admin/delete-submissions', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'dniList vacío.' });
     }
 
-    const list = await loadSubmissions();
-    const toDelete = list.filter((s) => s.dni && dniList.includes(s.dni));
-    const remaining = list.filter((s) => !(s.dni && dniList.includes(s.dni)));
+    const listBefore = await loadSubmissions();
+    const toDelete = listBefore.filter(
+      (s) => s.dni && dniList.includes(s.dni)
+    );
 
+    let deleted = 0;
+    if (DB_ENABLED) {
+      deleted = await deleteSubmissionsInDb(dniList);
+    } else {
+      const remaining = listBefore.filter(
+        (s) => !(s.dni && dniList.includes(s.dni))
+      );
+      await saveSubmissionsToFile(remaining);
+      deleted = toDelete.length;
+    }
+
+    // remove local photo files for those DNIs (best-effort)
     for (const s of toDelete) {
       const abs = findApprovedPhotoByDni(s.dni);
       if (abs) await deletePhotoFile(abs);
     }
 
-    await saveSubmissions(remaining);
-    res.json({ ok: true, deleted: toDelete.length });
+    res.json({ ok: true, deleted });
   } catch (err) {
     console.error('[delete-submissions] error:', err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ---------- ADMIN: mark SUNEDU sent ----------
+app.post('/api/admin/mark-sunedu-sent', async (req, res) => {
+  try {
+    const { dniList } = req.body || {};
+    if (!Array.isArray(dniList) || !dniList.length) {
+      return res.status(400).json({ ok: false, error: 'dniList vacío.' });
+    }
+
+    let updated = 0;
+
+    if (DB_ENABLED) {
+      updated = await markSuneduSentInDb(dniList);
+    } else {
+      const list = await loadSubmissionsFromFile();
+      const now = new Date().toISOString();
+      const updatedList = list.map((s) => {
+        if (s.dni && dniList.includes(s.dni)) {
+          updated += 1;
+          return { ...s, suneduStatus: 'Enviado', updatedAt: now };
+        }
+        return s;
+      });
+      await saveSubmissionsToFile(updatedList);
+    }
+
+    res.json({ ok: true, updated });
+  } catch (err) {
+    console.error('[mark-sunedu-sent] error:', err);
     res.status(500).json({ ok: false, error: err.message });
   }
 });
@@ -565,7 +777,8 @@ app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     validator: VALIDATOR_URL,
-    photosRoot: PHOTOS_ROOT
+    photosRoot: PHOTOS_ROOT,
+    dbEnabled: DB_ENABLED
   });
 });
 
@@ -574,4 +787,5 @@ app.listen(PORT, () => {
   console.log(`Validator URL configured as: ${VALIDATOR_URL}`);
   console.log(`PHOTOS_ROOT: ${PHOTOS_ROOT}`);
   console.log(`ZIP_OUTPUT_DIR: ${ZIP_OUTPUT_DIR}`);
+  console.log(`DB_ENABLED: ${DB_ENABLED}`);
 });
