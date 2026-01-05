@@ -188,10 +188,10 @@ async function upsertSubmissionInDb(submission) {
     : submission.issues
     ? submission.issues
     : [];
-
+                                                              
   const suneduStatus = submission.suneduStatus || 'Pendiente';
 
-  const q = `
+  const q = ` 
     insert into uma_submissions (
       dni,
       codigo,
@@ -239,7 +239,7 @@ async function upsertSubmissionInDb(submission) {
 
   await pool.query(q, params);
 }
-
+      
 // Find the approved JPG for a given DNI:
 //   photo/photos/approved/<dni>.jpg
 function findApprovedPhotoByDni(dni) {
@@ -780,7 +780,7 @@ app.post('/api/admin/delete-submissions', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
-
+  
 // ---------- ADMIN: mark SUNEDU sent ----------
 app.post('/api/admin/mark-sunedu-sent', async (req, res) => {
   try {
