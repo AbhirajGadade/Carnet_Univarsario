@@ -53,9 +53,9 @@ os.makedirs(os.path.join(PHOTOS_DIR, "approved"), exist_ok=True)
 os.makedirs(os.path.join(PHOTOS_DIR, "rejected"), exist_ok=True)
 
 # Pillow resampling constant
-try:
+try: 
     from PIL.Image import Resampling
-
+    
     RESAMPLE_LANCZOS = Resampling.LANCZOS
 except Exception:  # pragma: no cover
     RESAMPLE_LANCZOS = getattr(Image, "LANCZOS", getattr(Image, "BILINEAR", 2))
@@ -64,7 +64,6 @@ except Exception:  # pragma: no cover
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "student-photos")
-
 
 def _log(*a: Any) -> None:
     print(*a, flush=True)

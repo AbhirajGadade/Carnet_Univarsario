@@ -41,6 +41,8 @@ const {
   DATABASE_URL,
   POSTGRES_URL,
   SUPABASE_DB_URL,
+  ADMIN_EMAIL,
+  ADMIN_PASS,
 } = process.env;
 
 // Python validator URL (FastAPI)
@@ -188,10 +190,10 @@ async function upsertSubmissionInDb(submission) {
     : submission.issues
     ? submission.issues
     : [];
-                                                              
+
   const suneduStatus = submission.suneduStatus || 'Pendiente';
 
-  const q = ` 
+  const q = `
     insert into uma_submissions (
       dni,
       codigo,
@@ -239,7 +241,7 @@ async function upsertSubmissionInDb(submission) {
 
   await pool.query(q, params);
 }
-      
+
 // Find the approved JPG for a given DNI:
 //   photo/photos/approved/<dni>.jpg
 function findApprovedPhotoByDni(dni) {
@@ -299,6 +301,42 @@ async function markSuneduSentInDb(dniList) {
   `;
   const { rowCount } = await pool.query(q, [dniList]);
   return rowCount || 0;
+}
+
+// ---------- UMA helper: retry on 401/403 ----------
+async function callUmaWithAdminRetry(fn, args = {}) {
+  try {
+    // first attempt
+    return await fn(args);
+  } catch (err) {
+    const status = err?.response?.status || err?.status;
+    const isForbidden = status === 401 || status === 403;
+
+    // if it's not auth-related OR we don't have admin creds, just throw
+    if (!isForbidden || !ADMIN_EMAIL || !ADMIN_PASS) {
+      throw err;
+    }
+
+    console.warn(
+      '[uma] got',
+      status,
+      'from UMA. Trying adminLogin() once and retrying...'
+    );
+
+    try {
+      await adminLogin({ email: ADMIN_EMAIL, password: ADMIN_PASS });
+    } catch (loginErr) {
+      console.error(
+        '[uma] adminLogin retry failed:',
+        loginErr?.message || loginErr
+      );
+      // keep original error
+      throw err;
+    }
+
+    // second attempt after admin login
+    return fn(args);
+  }
 }
 
 // ---------- middleware ----------
@@ -397,7 +435,9 @@ app.post('/api/student/profile', async (req, res) => {
     if (!code) {
       return res.status(400).json({ ok: false, error: 'code is required' });
     }
-    const r = await adminGetStudent({ code });
+
+    // auto-retry on 401/403
+    const r = await callUmaWithAdminRetry(adminGetStudent, { code });
     res.json({ ok: true, data: r.data });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -415,7 +455,12 @@ app.post('/api/student/course-schedules', async (req, res) => {
         .status(400)
         .json({ ok: false, error: 'code and period are required' });
     }
-    const r = await adminGetCourseSchedules({ code, period });
+
+    // auto-retry on 401/403
+    const r = await callUmaWithAdminRetry(adminGetCourseSchedules, {
+      code,
+      period,
+    });
     res.json({ ok: true, data: r.data });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -432,7 +477,8 @@ app.post('/api/admin/student', async (req, res) => {
     if (!code) {
       return res.status(400).json({ ok: false, error: 'code is required' });
     }
-    const r = await adminGetStudent({ code });
+
+    const r = await callUmaWithAdminRetry(adminGetStudent, { code });
     res.json({ ok: true, data: r.data });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -450,7 +496,11 @@ app.post('/api/admin/course-schedules', async (req, res) => {
         .status(400)
         .json({ ok: false, error: 'code and period are required' });
     }
-    const r = await adminGetCourseSchedules({ code, period });
+
+    const r = await callUmaWithAdminRetry(adminGetCourseSchedules, {
+      code,
+      period,
+    });
     res.json({ ok: true, data: r.data });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -466,7 +516,8 @@ app.post('/api/admin/teachers', async (req, res) => {
     if (!period) {
       return res.status(400).json({ ok: false, error: 'period is required' });
     }
-    const r = await adminGetTeachers({ period });
+
+    const r = await callUmaWithAdminRetry(adminGetTeachers, { period });
     res.json({ ok: true, data: r.data });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -484,7 +535,11 @@ app.post('/api/admin/teacher-schedule', async (req, res) => {
         .status(400)
         .json({ ok: false, error: 'dni and period are required' });
     }
-    const r = await adminGetTeacherSchedule({ dni, period });
+
+    const r = await callUmaWithAdminRetry(adminGetTeacherSchedule, {
+      dni,
+      period,
+    });
     res.json({ ok: true, data: r.data });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -514,7 +569,8 @@ app.post('/validate', upload.single('image'), async (req, res) => {
 
     if (code && (!name || !email || !esp || !facultad)) {
       try {
-        const r = await adminGetStudent({ code });
+        // auto-retry on 401/403
+        const r = await callUmaWithAdminRetry(adminGetStudent, { code });
         const root = r.data || {};
         const s = root.data || root || {};
 
@@ -780,7 +836,7 @@ app.post('/api/admin/delete-submissions', async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
-  
+
 // ---------- ADMIN: mark SUNEDU sent ----------
 app.post('/api/admin/mark-sunedu-sent', async (req, res) => {
   try {
