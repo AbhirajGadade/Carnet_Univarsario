@@ -37,6 +37,7 @@ const {
   PORT = 5000,
   SESSION_SECRET = 'change-this',
   VALIDATOR_URL: ENV_VALIDATOR_URL,
+  UMA_BASE_URL,
   UMA_DATABASE_URL,
   DATABASE_URL,
   POSTGRES_URL,
@@ -371,6 +372,10 @@ async function getUmaAdminToken() {
       return null;
     }
 
+    console.log(
+      '[uma-admin-token] got access_token starting with:',
+      token.slice(0, 20) + '...'
+    );
     return token;
   } catch (err) {
     console.error(
@@ -423,6 +428,8 @@ async function checkCarnetPayment({ codigo, dni }) {
     const resp = await axios.post(url, body, {
       headers: {
         Authorization: `Bearer ${adminToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       timeout: 15000,
       validateStatus: () => true,
