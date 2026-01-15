@@ -46,11 +46,14 @@ const {
   ADMIN_PASS,
   // carnet payment env vars
   CARNET_API_URL,
-  CARNET_API_USER, // not used now, but kept for clarity
-  CARNET_API_PASS, // not used now, but kept for clarity
+  CARNET_API_USER, // not used directly now, kept for clarity
+  CARNET_API_PASS, // not used directly now, kept for clarity
   CARNET_CONCEPT_CODE,
   CARNET_PERIOD,
 } = process.env;
+
+// Normalize UMA base URL (no trailing slash)
+const UMA_BASE = (UMA_BASE_URL || '').trim().replace(/\/$/, '');
 
 // Python validator URL (FastAPI)
 const VALIDATOR_URL = ENV_VALIDATOR_URL || 'http://127.0.0.1:8000';
@@ -312,48 +315,54 @@ async function markSuneduSentInDb(dniList) {
 
 // ---------- UMA helper: retry on 401/403 ----------
 async function callUmaWithAdminRetry(fn, args = {}) {
+  let firstError = null;
+
   try {
     // first attempt
     return await fn(args);
   } catch (err) {
     const status = err?.response?.status || err?.status;
-    const isForbidden = status === 401 || status === 403;
+    const isAuthError = status === 401 || status === 403;
 
-    // if it's not auth-related OR we don't have admin creds, just throw
-    if (!isForbidden || !ADMIN_EMAIL || !ADMIN_PASS) {
+    if (!isAuthError || !ADMIN_EMAIL || !ADMIN_PASS) {
       throw err;
     }
 
-    console.warn(
-      '[uma] got',
-      status,
-      'from UMA. Trying adminLogin() once and retrying...'
+    firstError = err;
+  }
+
+  console.warn(
+    '[uma] got 401/403. Calling adminLogin() once to refresh token and retry...'
+  );
+
+  try {
+    await adminLogin({ email: ADMIN_EMAIL, password: ADMIN_PASS });
+  } catch (loginErr) {
+    console.error(
+      '[uma] adminLogin retry failed:',
+      loginErr.response?.data || loginErr.message || loginErr
     );
+    throw firstError;
+  }
 
-    try {
-      await adminLogin({ email: ADMIN_EMAIL, password: ADMIN_PASS });
-    } catch (loginErr) {
-      console.error(
-        '[uma] adminLogin retry failed:',
-        loginErr?.message || loginErr
-      );
-      // keep original error
-      throw err;
-    }
-
-    // second attempt after admin login
-    return fn(args);
+  try {
+    return await fn(args);
+  } catch (err) {
+    const status = err?.response?.status || err?.status;
+    console.error(
+      '[uma] request failed again after adminLogin. status=',
+      status,
+      'body=',
+      err.response?.data || err.message || err
+    );
+    throw err;
   }
 }
 
-// ---------- Carnet payment helper ----------
-
-// Get UMA admin access_token (Bearer) using adminLogin()
+// ---------- UMA admin token helper (Bearer) ----------
 async function getUmaAdminToken() {
   if (!ADMIN_EMAIL || !ADMIN_PASS) {
-    console.error(
-      '[uma-admin-token] ADMIN_EMAIL or ADMIN_PASS missing in .env'
-    );
+    console.error('[uma-admin-token] ADMIN_EMAIL or ADMIN_PASS missing in .env');
     return null;
   }
 
@@ -374,7 +383,8 @@ async function getUmaAdminToken() {
 
     console.log(
       '[uma-admin-token] got access_token starting with:',
-      token.slice(0, 20) + '...'
+      token.slice(0, 20),
+      '...'
     );
     return token;
   } catch (err) {
@@ -386,8 +396,70 @@ async function getUmaAdminToken() {
   }
 }
 
+// ---------- UMA student data helper ----------
+// Call the UMA "student data" API directly (grupoa/student) using admin token.
+// This is the API you see in Postman that returns student information.
+async function fetchStudentFromUma({ codigo }) {
+  if (!UMA_BASE) {
+    console.warn(
+      '[student-uma] UMA_BASE_URL not configured. Cannot fetch student profile.'
+    );
+    return null;
+  }
+
+  const adminToken = await getUmaAdminToken();
+  if (!adminToken) {
+    return null;
+  }
+
+  const codeStr = codigo.toString().trim();
+  const url = `${UMA_BASE}/grupoa/student`; // adjust if your UMA path is different
+
+  // Body is both "code" and "codigo" to be safe.
+  const body = { code: codeStr, codigo: codeStr };
+
+  console.log('[student-uma] POST', url, 'body =', body);
+
+  try {
+    const resp = await axios.post(url, body, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+      },
+      timeout: 15000,
+      validateStatus: () => true,
+    });
+
+    const httpStatus = resp.status;
+    const payload = resp.data || {};
+
+    console.log(
+      '[student-uma] HTTP',
+      httpStatus,
+      '- raw payload:',
+      JSON.stringify(payload).slice(0, 300) + '...'
+    );
+
+    if (httpStatus < 200 || httpStatus >= 300) {
+      console.error(
+        '[student-uma] unexpected status from student API:',
+        httpStatus,
+        payload
+      );
+      return null;
+    }
+
+    // Many UMA APIs wrap result as { status, message, data: {...} } or data: [..]
+    let student = payload.data ?? payload;
+    return student;
+  } catch (err) {
+    console.error('[student-uma] error calling UMA student API:', err);
+    return null;
+  }
+}
+
+// ---------- Carnet payment helper ----------
 // Calls grupoa/carnet_payments with UMA admin Bearer token and checks
-// that there is at least one row with:
+// there is a row with:
 //   codAlu === codigo
 //   period === CARNET_PERIOD (if set)
 //   number_ticket not empty
@@ -412,7 +484,6 @@ async function checkCarnetPayment({ codigo, dni }) {
     if (wantedDni) body.dni = wantedDni;
     if (periodFilter) body.period = periodFilter;
 
-    // 1) get UMA admin token
     const adminToken = await getUmaAdminToken();
     if (!adminToken) {
       return {
@@ -424,12 +495,9 @@ async function checkCarnetPayment({ codigo, dni }) {
 
     console.log('[carnet] POST', url, 'body =', body);
 
-    // 2) call carnet_payments with Bearer token (like Postman)
     const resp = await axios.post(url, body, {
       headers: {
         Authorization: `Bearer ${adminToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
       },
       timeout: 15000,
       validateStatus: () => true,
@@ -469,8 +537,8 @@ async function checkCarnetPayment({ codigo, dni }) {
       const ticket = (row.number_ticket || '').toString().trim();
       const period = (row.period || '').toString().trim();
 
-      if (!ticket) return false; // must have number_ticket
-      if (codAlu !== wantedCodigo) return false; // must match student code
+      if (!ticket) return false;
+      if (codAlu !== wantedCodigo) return false;
       if (periodFilterStr && period !== periodFilterStr) return false;
 
       if (wantedDni && rowDni && rowDni !== wantedDni) {
@@ -540,11 +608,10 @@ app.post('/api/student/login', async (req, res) => {
         .json({ ok: false, error: 'codigo and dni are required' });
     }
 
-    // STEP 1: verify carnet payment first
+    // STEP 1: verify carnet payment FIRST
     const carnet = await checkCarnetPayment({ codigo, dni });
 
     if (!carnet.allowed) {
-      // student has NOT paid (or we couldn't verify)
       return res.status(403).json({
         ok: false,
         error:
@@ -554,7 +621,7 @@ app.post('/api/student/login', async (req, res) => {
       });
     }
 
-    // STEP 2: normal UMA student login
+    // STEP 2: UMA student login
     const r = await studentLogin({ codigo, dni });
 
     const root = r.data || {};
@@ -573,7 +640,9 @@ app.post('/api/student/login', async (req, res) => {
     setStudentAccessToken(req.session, access);
     setStudentRefreshToken(req.session, refresh);
 
-    // Everything OK: carnet payment + UMA login
+    // STEP 3: fetch student profile from UMA_BASE_URL (grupoa/student)
+    const studentProfile = await fetchStudentFromUma({ codigo });
+
     res.json({
       ok: true,
       message: 'login ok',
@@ -582,6 +651,7 @@ app.post('/api/student/login', async (req, res) => {
         reason: carnet.reason || 'ok',
         row: carnet.row || null,
       },
+      student: studentProfile || null,
     });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
@@ -625,7 +695,7 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-// ---------- STUDENT PROFILE ----------
+// ---------- STUDENT PROFILE (for frontend) ----------
 app.post('/api/student/profile', async (req, res) => {
   try {
     const { code } = req.body;
@@ -633,9 +703,16 @@ app.post('/api/student/profile', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'code is required' });
     }
 
-    // auto-retry on 401/403
-    const r = await callUmaWithAdminRetry(adminGetStudent, { code });
-    res.json({ ok: true, data: r.data });
+    const studentProfile = await fetchStudentFromUma({ codigo: code });
+
+    if (!studentProfile) {
+      return res.status(502).json({
+        ok: false,
+        error: 'No se pudo obtener el perfil del estudiante desde UMA.',
+      });
+    }
+
+    res.json({ ok: true, data: studentProfile });
   } catch (e) {
     const status = e.response?.status || e.status || 500;
     res
@@ -644,6 +721,7 @@ app.post('/api/student/profile', async (req, res) => {
   }
 });
 
+// ---------- STUDENT COURSE SCHEDULES ----------
 app.post('/api/student/course-schedules', async (req, res) => {
   try {
     const { code, period } = req.body;
@@ -653,7 +731,6 @@ app.post('/api/student/course-schedules', async (req, res) => {
         .json({ ok: false, error: 'code and period are required' });
     }
 
-    // auto-retry on 401/403
     const r = await callUmaWithAdminRetry(adminGetCourseSchedules, {
       code,
       period,
@@ -764,7 +841,6 @@ app.post('/validate', upload.single('image'), async (req, res) => {
 
     if (code && (!name || !email || !esp || !facultad)) {
       try {
-        // auto-retry on 401/403
         const r = await callUmaWithAdminRetry(adminGetStudent, { code });
         const root = r.data || {};
         const s = root.data || root || {};
