@@ -158,7 +158,7 @@
             font-size: 12px;
         }
 
-        /* Logout button IN HEADER (hidden by default, only mobile) */
+        /* Logout button in HEADER – hidden on desktop, shown on mobile */
         .header-logout-btn {
             display: none; /* desktop: hidden */
             align-items: center;
@@ -226,7 +226,7 @@
             color: var(--primary-dark);
         }
 
-        /* logout button INSIDE nav (visible desktop, hidden mobile) */
+        /* Logout button in NAV – visible on desktop, hidden on mobile */
         .nav-logout {
             flex: 0 0 auto;
         }
@@ -629,7 +629,7 @@
                 gap: 8px;
             }
 
-            /* on small screens: show header logout, hide nav logout */
+            /* on small screens: show ONLY header logout, hide nav logout */
             .header-logout-btn {
                 display: inline-flex;
                 width: 100%;
@@ -710,7 +710,8 @@
             <button type="button" class="nav-link" data-route="photo">
                 <i class="fas fa-id-card"></i> Cargar foto
             </button>
-            <button type="button" class="nav-link nav-logout" data-logout="1" id="logoutBtnNav">
+            <!-- Logout in tab bar (desktop only; hidden on mobile via CSS) -->
+            <button type="button" class="nav-link nav-logout" id="logoutBtnNav">
                 <i class="fas fa-right-from-bracket"></i> Cerrar sesión
             </button>
         </div>
@@ -886,7 +887,6 @@
                                         autocomplete="tel"
                                     >
                                 </div>
-                               
                             </div>
                             <div class="btn-row">
                                 <button class="btn" type="submit">
@@ -1040,10 +1040,6 @@
         topNav.addEventListener('click', (e) => {
             const btn = e.target.closest('button');
             if (!btn) return;
-            if (btn.dataset.logout === '1') {
-                doLogout();
-                return;
-            }
             const route = btn.dataset.route;
             if (route) goto(route);
         });

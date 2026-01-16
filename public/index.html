@@ -270,7 +270,7 @@
                     document.getElementById('help-stu').style.display = '';
                     document.getElementById('help-adm').style.display = 'none';
                 } else {
-                    lblUser.textContent = 'Correo';
+                    lblUser.textContent = 'orreo';
                     userInput.type = 'email';
                     userInput.placeholder = 'tu.correo@uma.edu.pe';
                     userInput.removeAttribute('inputmode');
@@ -321,7 +321,7 @@
                         localStorage.setItem('uma_session_email', `${u}@uma.edu.pe`);
                         location.replace('student.html?code=' + encodeURIComponent(u));
                     } else {
-                        if (!u || !p) throw new Error('Email y contraseña requeridos');
+                        if (!u || !p) throw new Error('correo y contraseña requeridos');
 
                         const r = await fetch('/api/admin/login', {
                             method: 'POST',
