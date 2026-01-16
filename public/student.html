@@ -121,11 +121,13 @@
             font-weight: 500;
         }
 
-        /* RIGHT SIDE OF HEADER (connected chip) */
+        /* RIGHT SIDE OF HEADER (session + logout) */
         .header-right {
             display: flex;
             align-items: center;
             justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .session-chip {
@@ -154,6 +156,31 @@
 
         .session-chip .session-icon i {
             font-size: 12px;
+        }
+
+        /* Logout button IN HEADER (hidden by default, only mobile) */
+        .header-logout-btn {
+            display: none; /* desktop: hidden */
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: #fff;
+            box-shadow: var(--shadow-hover);
+            white-space: nowrap;
+        }
+
+        .header-logout-btn i {
+            font-size: 0.9rem;
+        }
+
+        .header-logout-btn:hover {
+            filter: brightness(1.03);
         }
 
         /* Top Nav */
@@ -197,6 +224,11 @@
         .top-nav button:hover:not(.active) {
             background: #fff5f7;
             color: var(--primary-dark);
+        }
+
+        /* logout button INSIDE nav (visible desktop, hidden mobile) */
+        .nav-logout {
+            flex: 0 0 auto;
         }
 
         /* Screens */
@@ -594,6 +626,19 @@
 
             .header-right {
                 justify-content: center;
+                gap: 8px;
+            }
+
+            /* on small screens: show header logout, hide nav logout */
+            .header-logout-btn {
+                display: inline-flex;
+                width: 100%;
+                max-width: 220px;
+                justify-content: center;
+            }
+
+            .nav-logout {
+                display: none;
             }
 
             .main-grid {
@@ -607,6 +652,12 @@
 
             .preview {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-logout-btn {
+                padding: 8px 12px;
             }
         }
     </style>
@@ -640,10 +691,15 @@
                     <div class="session-icon"><i class="fas fa-user"></i></div>
                     <span>Conectado</span>
                 </div>
+                <!-- Header logout (only visible on small screens) -->
+                <button type="button" class="header-logout-btn" id="logoutBtnHeader">
+                    <i class="fas fa-right-from-bracket"></i>
+                    <span class="logout-text">Cerrar sesión</span>
+                </button>
             </div>
         </div>
 
-        <!-- Top navigation -->
+        <!-- Top navigation (desktop has logout here; mobile hides this one) -->
         <div class="top-nav" id="topNav">
             <button type="button" class="nav-link active" data-route="dashboard">
                 <i class="fas fa-gauge-high"></i> Tablero
@@ -654,7 +710,7 @@
             <button type="button" class="nav-link" data-route="photo">
                 <i class="fas fa-id-card"></i> Cargar foto
             </button>
-            <button type="button" class="nav-link" id="logoutBtn">
+            <button type="button" class="nav-link nav-logout" data-logout="1" id="logoutBtnNav">
                 <i class="fas fa-right-from-bracket"></i> Cerrar sesión
             </button>
         </div>
@@ -903,16 +959,26 @@
         const sessionChip = document.getElementById('sessionChip');
         const profileAvatar = document.getElementById('profileAvatar');
         const errOverlay = document.getElementById('errOverlay');
+        const logoutBtnHeader = document.getElementById('logoutBtnHeader');
+        const logoutBtnNav = document.getElementById('logoutBtnNav');
+        const topNav = document.getElementById('topNav');
 
         function hideLoader() {
             if (loader) loader.classList.add('hidden');
             document.body.classList.remove('loading');
         }
 
+        // central logout function used by both buttons
+        function doLogout() {
+            localStorage.clear();
+            hideLoader();
+            location.replace('index.html');
+        }
+
         // start in loading mode
         document.body.classList.add('loading');
 
-        // ---- GET STUDENT CODE (NO API ROOTS CHANGED) ----
+        // ---- GET STUDENT CODE ----
         const urlParams = new URLSearchParams(location.search);
         let code =
             urlParams.get('code') ||
@@ -955,10 +1021,15 @@
             `;
         }
 
+        // Attach logout to both header + nav buttons
+        if (logoutBtnHeader) logoutBtnHeader.addEventListener('click', doLogout);
+        if (logoutBtnNav) logoutBtnNav.addEventListener('click', doLogout);
+
         function goto(route) {
             document.querySelectorAll('.nav-link').forEach(b => {
+                // only toggle active for buttons that navigate (have data-route)
                 if (b.dataset.route === route) b.classList.add('active');
-                else if (b.id !== 'logoutBtn') b.classList.remove('active');
+                else if (b.dataset.route) b.classList.remove('active');
             });
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const sec = document.getElementById('route-' + route);
@@ -966,13 +1037,11 @@
             location.hash = '#' + route;
         }
 
-        document.getElementById('topNav').addEventListener('click', (e) => {
+        topNav.addEventListener('click', (e) => {
             const btn = e.target.closest('button');
             if (!btn) return;
-            if (btn.id === 'logoutBtn') {
-                localStorage.clear();
-                hideLoader();
-                location.replace('index.html');
+            if (btn.dataset.logout === '1') {
+                doLogout();
                 return;
             }
             const route = btn.dataset.route;
@@ -1022,7 +1091,6 @@
                     );
                 }
 
-                // root object from API
                 const root = j.data || j;
                 const s =
                     root.data ||
@@ -1215,8 +1283,8 @@
                     formData.append('code', code || '');
                     formData.append('name', fullName);
                     formData.append('email', email);
-                    formData.append('esp', esp);       // carrera
-                    formData.append('facultad', facultad); // facultad  <<< NEW
+                    formData.append('esp', esp);
+                    formData.append('facultad', facultad);
 
                     const resp = await fetch('/validate', {
                         method: 'POST',
@@ -1347,7 +1415,6 @@
                     }
                     mType.textContent = 'image/jpeg';
 
-                    // Convert data URL back to File for /validate
                     const blobResp = await fetch(dataUrl);
                     const blob = await blobResp.blob();
                     const baseName = (currentFile.name || 'foto').replace(/\.[^/.]+$/, '');
@@ -1355,7 +1422,6 @@
                     const fixedFile = new File([blob], fixedName, { type: 'image/jpeg' });
                     currentFile = fixedFile;
 
-                    // reset approval
                     lastValidResult = null;
                     localStorage.removeItem('uma_photo_ok');
                     renderProgress();
