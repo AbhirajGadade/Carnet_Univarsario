@@ -137,6 +137,9 @@
       gap:18px;
     }
 
+    /* important: prevent children from forcing width */
+    main{ min-width:0; }
+
     .card{
       background:var(--card);
       border:1px solid #ffe3ea;
@@ -172,6 +175,7 @@
       text-align:left;
       justify-content:flex-start;
       font-weight:700;
+      min-width:0;
     }
 
     .link i{ color:var(--primary); }
@@ -186,6 +190,10 @@
       border-color:var(--outline);
       background:#fff0f4;
     }
+
+    /* labels: desktop shows long text */
+    .label-long{ display:inline; }
+    .label-short{ display:none; }
 
     .screen{ display:none; }
     .screen.active{ display:block; }
@@ -212,6 +220,7 @@
       padding:8px 12px;
       font-size:13px;
       background:#fff;
+      min-width:0;
     }
 
     .btn{
@@ -228,6 +237,7 @@
       font-weight:700;
       font-size:13px;
       box-shadow:0 8px 20px rgba(240,36,84,.18);
+      white-space:nowrap;
     }
 
     .btn.ghost{
@@ -248,7 +258,12 @@
     .btn:disabled{ opacity:.5; cursor:not-allowed; }
 
     /* ===== TABLES ===== */
-    .table-scroll{ width:100%; overflow:visible; } /* desktop unchanged */
+    .table-scroll{
+      width:100%;
+      max-width:100%;
+      display:block;
+      overflow:visible; /* desktop unchanged */
+    }
 
     table{
       width:100%;
@@ -292,6 +307,7 @@
       font-size:11px;
       border-radius:999px;
       font-weight:600;
+      white-space:nowrap;
     }
 
     .status-approved{ background:#ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
@@ -392,11 +408,9 @@
     .code-with-checkbox input{ margin:0; }
 
     /* ===== MOBILE =====
-       - Header like student portal (stacked)
-       - Nav becomes student-portal top-nav style (NOT scrollable)
-       - Tabs truncate with ellipsis (no long buttons)
-       - Tables become side-scrollable
-       - Desktop stays unchanged
+       - Tabs NOT scrollable
+       - Tabs SHORT (like student portal) so they don't become long
+       - DATA (tables) scroll horizontally
     */
     @media (max-width: 768px), (hover:none) and (pointer:coarse){
       body{ overflow-x:hidden; }
@@ -417,13 +431,9 @@
         gap:10px;
       }
 
-      .brand img{
-        height:64px;
-      }
+      .brand img{ height:64px; }
 
-      .brand h1{
-        font-size:1.5rem;
-      }
+      .brand h1{ font-size:1.5rem; }
 
       .header-right{
         justify-content:center;
@@ -443,37 +453,41 @@
         gap:14px;
       }
 
-      /* make sidebar card look like top-nav container */
+      /* make sidebar look like top-nav container */
       aside.card{
         background:transparent;
         border:none;
         box-shadow:none;
       }
 
-      /* top-nav look */
+      /* TOP NAV LOOK (NOT SCROLLABLE) */
       .nav{
         display:flex;
-        flex-wrap:wrap;           /* ✅ no scroll */
+        flex-wrap:wrap;
         gap:10px;
         background:#fff;
         padding:8px;
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow);
         border:1px solid #ffe3ea;
-        overflow-x:hidden;        /* ✅ guarantee not scrollable */
+        overflow:hidden; /* ✅ no scroll */
       }
 
       .section{ display:none; }
 
-      /* ✅ tabs like student portal + truncate long text */
+      /* show short labels on mobile */
+      .label-long{ display:none; }
+      .label-short{ display:inline; }
+
+      /* tabs like student portal pills (short, 3 across) */
       .link{
-        flex: 1 1 calc(50% - 10px);
+        flex: 1 1 calc(33.333% - 10px);
         min-width:0;
         margin:0;
         border:none;
         background:transparent;
         border-radius:999px;
-        padding:10px 12px;
+        padding:10px 10px;
         font-size:0.92rem;
         font-weight:600;
         color: var(--muted);
@@ -481,7 +495,7 @@
         text-align:center;
         gap:8px;
 
-        /* ✅ prevent long labels from breaking layout */
+        /* keep it compact */
         white-space:nowrap;
         overflow:hidden;
         text-overflow:ellipsis;
@@ -505,11 +519,6 @@
         box-shadow: var(--shadow-hover);
       }
 
-      /* SUNEDU full width */
-      .link[data-route="sunedu"]{
-        flex-basis:100%;
-      }
-
       /* hide sidebar logout on mobile (logout is in header) */
       .link[data-route="logout"]{ display:none; }
 
@@ -517,15 +526,19 @@
       .toolbar-left{ flex-wrap:wrap; }
       .search{ min-width:200px; }
 
-      /* tables scroll horizontally on mobile */
+      /* ✅ DATA scrolls, NOT tabs */
       .table-scroll{
         overflow-x:auto;
         overflow-y:hidden;
         -webkit-overflow-scrolling:touch;
         width:100%;
+        max-width:100%;
       }
       .table-scroll th, .table-scroll td{ white-space:nowrap; }
       .table-scroll table{ min-width:1100px; }
+
+      /* stop table from making the whole card overflow */
+      section.card.pad{ overflow:hidden; }
     }
   </style>
 </head>
@@ -562,24 +575,32 @@
           <div class="section">GESTIÓN</div>
 
           <button type="button" class="link" data-route="approved" title="Solicitudes Aprobadas">
-            <i class="fas fa-circle-check"></i> Solicitudes Aprobadas
+            <i class="fas fa-circle-check"></i>
+            <span class="label-long">Solicitudes Aprobadas</span>
+            <span class="label-short">Aprobadas</span>
           </button>
 
           <button type="button" class="link" data-route="rejected" title="Solicitudes Rechazadas">
-            <i class="fas fa-circle-xmark"></i> Solicitudes Rechazadas
+            <i class="fas fa-circle-xmark"></i>
+            <span class="label-long">Solicitudes Rechazadas</span>
+            <span class="label-short">Rechazadas</span>
           </button>
 
           <div class="section">SUNEDU</div>
 
           <button type="button" class="link" data-route="sunedu" title="Envíos y Paquetes">
-            <i class="fas fa-box-archive"></i> Envíos y Paquetes
+            <i class="fas fa-box-archive"></i>
+            <span class="label-long">Envíos y Paquetes</span>
+            <span class="label-short">SUNEDU</span>
           </button>
 
           <div class="section">SISTEMA</div>
 
           <!-- Desktop logout (hidden on mobile) -->
           <button type="button" class="link" data-route="logout">
-            <i class="fas fa-right-from-bracket"></i> Cerrar sesión
+            <i class="fas fa-right-from-bracket"></i>
+            <span class="label-long">Cerrar sesión</span>
+            <span class="label-short">Salir</span>
           </button>
         </nav>
       </aside>
