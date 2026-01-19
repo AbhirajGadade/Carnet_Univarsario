@@ -5,22 +5,32 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>UMA — Panel de Administración</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Icons (optional but good for consistent UI) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
     :root {
       --primary: #f02454;
+      --primary-light: #ff6090;
+      --primary-dark: #b0003a;
+
       --outline: #ffc2d0;
       --ring: #ffd3dd;
       --muted: #6b7280;
       --text: #0f172a;
+
       --bg: #fff5f8;
       --card: #ffffff;
-      --shadow: 0 20px 60px rgba(15, 23, 42, .06)
+
+      /* keep your desktop shadow feel */
+      --shadow: 0 20px 60px rgba(15, 23, 42, .06);
+      /* student-portal softer shadow used on header/mobile */
+      --shadow-soft: 0 4px 12px rgba(240, 36, 84, 0.08);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -35,6 +45,7 @@
       padding: 0 16px;
     }
 
+    /* ===== HEADER (desktop keeps same layout) ===== */
     .header {
       display: flex;
       align-items: center;
@@ -52,15 +63,34 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      min-width: 0;
     }
 
-    .brand img {
+    /* updated: use bigger logo like student portal on mobile, desktop stays fine */
+    .brand-logo-img {
       height: 36px;
+      width: auto;
+      object-fit: contain;
     }
 
-    .brand h1 {
+    .brand-text h1 {
       margin: 0;
       font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .session-chip {
@@ -76,6 +106,7 @@
       white-space: nowrap;
     }
 
+    /* keep your session icon style */
     .session-icon {
       width: 22px;
       height: 22px;
@@ -85,6 +116,7 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      flex: 0 0 auto;
     }
 
     .session-icon::before {
@@ -107,6 +139,25 @@
       position: absolute;
       bottom: 3px;
     }
+
+    /* mobile-only logout button in header (student portal style) */
+    .header-logout-btn {
+      display: none; /* desktop hidden */
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(240, 36, 84, 0.14);
+      white-space: nowrap;
+    }
+
+    .header-logout-btn:hover { filter: brightness(1.03); }
 
     .pill {
       display: inline-flex;
@@ -136,15 +187,12 @@
       border: 1px solid #ffe3ea;
       border-radius: 16px;
       box-shadow: var(--shadow);
+      max-width: 100%;
     }
 
-    .pad {
-      padding: 16px;
-    }
+    .pad { padding: 16px; }
 
-    .nav {
-      padding: 10px;
-    }
+    .nav { padding: 10px; }
 
     .section {
       font-weight: 800;
@@ -181,13 +229,8 @@
       background: #fff0f4;
     }
 
-    .screen {
-      display: none;
-    }
-
-    .screen.active {
-      display: block;
-    }
+    .screen { display: none; }
+    .screen.active { display: block; }
 
     .toolbar {
       display: flex;
@@ -195,6 +238,7 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 10px;
+      max-width: 100%;
     }
 
     .toolbar-left {
@@ -202,10 +246,12 @@
       align-items: center;
       gap: 8px;
       flex: 1;
+      min-width: 0;
     }
 
     .search {
       flex: 1;
+      min-width: 0;
       border-radius: 999px;
       border: 1px solid #ffe0ea;
       padding: 8px 12px;
@@ -227,6 +273,7 @@
       font-weight: 700;
       font-size: 13px;
       box-shadow: 0 8px 20px rgba(240, 36, 84, .18);
+      white-space: nowrap;
     }
 
     .btn.ghost {
@@ -258,6 +305,7 @@
       font-size: 13px;
     }
 
+    /* ===== TABLES ===== */
     table {
       width: 100%;
       border-collapse: separate;
@@ -307,6 +355,7 @@
       font-size: 11px;
       border-radius: 999px;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .status-approved {
@@ -325,6 +374,11 @@
       background: #eff6ff;
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
+    }
+
+    /* NEW: wrapper that will scroll horizontally on mobile only */
+    .table-scroll {
+      max-width: 100%;
     }
 
     #toast {
@@ -355,9 +409,7 @@
       flex-direction: column;
     }
 
-    #drawer.open {
-      transform: translateX(0);
-    }
+    #drawer.open { transform: translateX(0); }
 
     #drawer header {
       padding: 14px 16px;
@@ -434,25 +486,136 @@
       gap: 8px;
     }
 
-    .code-with-checkbox input {
-      margin: 0;
+    .code-with-checkbox input { margin: 0; }
+
+    /* =======================
+       MOBILE ONLY CHANGES
+       ======================= */
+    @media (max-width: 768px) {
+      /* IMPORTANT: stop whole-page horizontal overflow */
+      body { overflow-x: hidden; }
+
+      .container {
+        margin: 14px auto;
+        padding: 0 12px;
+      }
+
+      /* Header like student portal */
+      .header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 16px 18px;
+        border-radius: 16px;
+        box-shadow: var(--shadow-soft);
+      }
+
+      .brand {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .brand-logo-img {
+        height: 64px; /* student portal size on mobile */
+      }
+
+      .brand-text h1 {
+        font-size: 1.45rem;
+      }
+
+      .brand-text p {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .header-right {
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .header-logout-btn {
+        display: inline-flex;
+        width: 100%;
+        max-width: 240px;
+        justify-content: center;
+      }
+
+      /* Stack sidebar + main so it doesn't squeeze content */
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      /* make sidebar nav act like a top "tab bar" (optional, but prevents narrow layout) */
+      .nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 10px;
+      }
+      .nav::-webkit-scrollbar { display: none; }
+      .nav { scrollbar-width: none; }
+
+      .section { display: none; }
+
+      .link {
+        flex: 0 0 auto;
+        margin: 0;
+        white-space: nowrap;
+        border-radius: 999px;
+      }
+
+      /* Hide the sidebar logout on mobile (use header logout only) */
+      .link[data-route="logout"] {
+        display: none !important;
+      }
+
+      /* TOOLBAR wraps nicely */
+      .toolbar-left {
+        flex-wrap: wrap;
+      }
+
+      /* ✅ TABLES: scroll horizontally inside the table area */
+      .table-scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+      }
+
+      /* give the tables a minimum width so columns don't crush */
+      .table-scroll table {
+        min-width: 1050px; /* big enough for your columns */
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="container">
+    <!-- UPDATED HEADER STRUCTURE (desktop looks same, mobile matches student portal) -->
     <div class="header">
       <div class="brand">
-        <img src="assets/images/logo-pdf.png" alt="UMA" />
-        <div>
+        <img src="assets/images/logo-pdf.png" alt="UMA" class="brand-logo-img" />
+        <div class="brand-text">
           <h1>Panel Administrativo UMA</h1>
-          <div class="muted">Gestión de solicitudes y fotos</div>
+          <p>Gestión de solicitudes y fotos</p>
         </div>
       </div>
-      <div class="session-chip" id="sessionChip">
-        <div class="session-icon"></div>
-        <span>Conectado</span>
+
+      <div class="header-right">
+        <div class="session-chip" id="sessionChip">
+          <div class="session-icon"></div>
+          <span>Conectado</span>
+        </div>
+
+        <!-- MOBILE logout (only visible on small screen) -->
+        <button type="button" class="header-logout-btn" id="logoutBtnHeader">
+          <i class="fas fa-right-from-bracket"></i>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </div>
 
@@ -486,26 +649,29 @@
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <label class="code-with-checkbox">
-                    <input type="checkbox" id="selectAllApproved">
-                    <span>Código</span>
-                  </label>
-                </th>
-                <th>Nombre</th>
-                <th>Correo</th>
-                <th>FACULTAD</th>
-                <th>CARRERA</th>
-                <th>IA</th>
-                <th>Supabase URL</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="approvedRows"></tbody>
-          </table>
+          <!-- ✅ NEW: table wrapper for mobile horizontal scroll -->
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>
+                    <label class="code-with-checkbox">
+                      <input type="checkbox" id="selectAllApproved">
+                      <span>Código</span>
+                    </label>
+                  </th>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>FACULTAD</th>
+                  <th>CARRERA</th>
+                  <th>IA</th>
+                  <th>Supabase URL</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="approvedRows"></tbody>
+            </table>
+          </div>
         </section>
 
         <!-- Rechazadas -->
@@ -516,20 +682,23 @@
               <span class="muted" id="countRejected">0 resultado(s)</span>
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Correo</th>
-                <th>FACULTAD</th>
-                <th>CARRERA</th>
-                <th>Motivo</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="rejectedRows"></tbody>
-          </table>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>FACULTAD</th>
+                  <th>CARRERA</th>
+                  <th>Motivo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="rejectedRows"></tbody>
+            </table>
+          </div>
         </section>
 
         <!-- SUNEDU / Envíos y Paquetes -->
@@ -540,6 +709,7 @@
               <span class="muted" id="countSunedu">0 aprobado(s)</span>
             </div>
           </div>
+
           <div class="toolbar" style="margin-top:4px;margin-bottom:8px;">
             <div class="toolbar-left">
               <button class="btn" id="btnZipSunedu" type="button">Generar Paquetes (SUNEDU)</button>
@@ -547,24 +717,27 @@
               <button class="btn btn-danger" id="btnDeleteSunedu" type="button">Eliminar seleccionados</button>
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <label class="code-with-checkbox">
-                    <input type="checkbox" id="selectAllSunedu">
-                    <span>Código</span>
-                  </label>
-                </th>
-                <th>Nombre</th>
-                <th>DNI</th>
-                <th>Estado SUNEDU</th>
-                <th>Actualizado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="suneduRows"></tbody>
-          </table>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>
+                    <label class="code-with-checkbox">
+                      <input type="checkbox" id="selectAllSunedu">
+                      <span>Código</span>
+                    </label>
+                  </th>
+                  <th>Nombre</th>
+                  <th>DNI</th>
+                  <th>Estado SUNEDU</th>
+                  <th>Actualizado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="suneduRows"></tbody>
+            </table>
+          </div>
         </section>
       </main>
     </div>
@@ -630,6 +803,15 @@
         setTimeout(() => el.remove(), 4000);
       }
 
+      function doLogout() {
+        localStorage.clear();
+        location.replace('index.html');
+      }
+
+      // ✅ NEW: mobile header logout button
+      const logoutBtnHeader = document.getElementById('logoutBtnHeader');
+      if (logoutBtnHeader) logoutBtnHeader.addEventListener('click', doLogout);
+
       // ---- session chip ----
       (function guard() {
         const role = localStorage.getItem('uma_session_role');
@@ -658,8 +840,7 @@
         const btn = e.target.closest('button.link');
         if (!btn) return;
         if (btn.dataset.route === 'logout') {
-          localStorage.clear();
-          location.replace('index.html');
+          doLogout();
           return;
         }
         goto(btn.dataset.route);
@@ -686,22 +867,15 @@
 
       // ---- helper: resolve photo URL for a row ----
       function getPhotoUrl(row) {
-        // 1) explicit URL from backend (preferred)
         if (row.photoUrl) return row.photoUrl;
         if (row.supabase_url) return row.supabase_url;
 
-        // 2) local relative path from backend (e.g. "photos/approved/12345678.jpg")
         if (row.relative_path) {
           const p = String(row.relative_path);
           return p.startsWith('/') ? p : '/' + p;
         }
 
-        // 3) fallback guess based on DNI and local /photos static route
-        if (row.dni) {
-          return '/photos/approved/' + row.dni + '.jpg';
-        }
-
-        // no idea
+        if (row.dni) return '/photos/approved/' + row.dni + '.jpg';
         return '';
       }
 
@@ -751,13 +925,9 @@
         const tb = document.getElementById(tbodyId);
 
         if (!rows.length) {
-          if (kind === 'approved') {
-            renderEmptyRow(tbodyId, 8, 'Sin solicitudes aprobadas aún.');
-          } else if (kind === 'rejected') {
-            renderEmptyRow(tbodyId, 7, 'Sin solicitudes rechazadas.');
-          } else {
-            renderEmptyRow(tbodyId, 6, 'No hay aprobados para SUNEDU.');
-          }
+          if (kind === 'approved') renderEmptyRow(tbodyId, 8, 'Sin solicitudes aprobadas aún.');
+          else if (kind === 'rejected') renderEmptyRow(tbodyId, 7, 'Sin solicitudes rechazadas.');
+          else renderEmptyRow(tbodyId, 6, 'No hay aprobados para SUNEDU.');
           return;
         }
 
@@ -771,9 +941,7 @@
             const carrera = r.carrera || r.esp || '—';
 
             const linkUrl = r.supabase_url || getPhotoUrl(r);
-            const supaLink = linkUrl
-              ? `<a href="${linkUrl}" target="_blank" rel="noopener">Abrir</a>`
-              : '—';
+            const supaLink = linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener">Abrir</a>` : '—';
 
             return `
               <tr>
@@ -828,7 +996,6 @@
             </tr>`).join('');
         }
 
-        // attach view button handlers
         tb.querySelectorAll('.viewBtn').forEach(btn => {
           const kindBtn = btn.dataset.kind;
           const idx = parseInt(btn.dataset.index, 10);
@@ -840,7 +1007,6 @@
         });
       }
 
-      // ---- filtering helpers ----
       function filterRows(kind, term) {
         const base = datasets[kind] || [];
         const q = (term || '').trim().toLowerCase();
@@ -886,16 +1052,14 @@
           const r = await fetch('/api/admin/submissions');
           const ct = r.headers.get('content-type') || '';
           let j;
-          if (ct.includes('application/json')) {
-            j = await r.json();
-          } else {
+
+          if (ct.includes('application/json')) j = await r.json();
+          else {
             const text = await r.text();
             throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
           }
 
-          if (!r.ok || !j.ok) {
-            throw new Error(j.error || 'No se pudo cargar datos');
-          }
+          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo cargar datos');
 
           const approved = j.data?.approved || [];
           const rejected = j.data?.rejected || [];
@@ -916,28 +1080,24 @@
         }
       }
 
-      // ---- ZIP helpers ----
       async function generateZipForDniList(dniList) {
         try {
-          const body = { dniList };
           const r = await fetch('/api/admin/generate-zip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify({ dniList })
           });
 
           const ct = r.headers.get('content-type') || '';
           let j;
-          if (ct.includes('application/json')) {
-            j = await r.json();
-          } else {
+
+          if (ct.includes('application/json')) j = await r.json();
+          else {
             const text = await r.text();
             throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
           }
 
-          if (!r.ok || !j.ok) {
-            throw new Error(j.error || 'No se pudo generar el ZIP');
-          }
+          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo generar el ZIP');
 
           toast(`ZIP generado con ${j.total} estudiante(s)`, false);
 
@@ -967,7 +1127,6 @@
         await generateZipForDniList(dniList);
       }
 
-      // ---- SUNEDU mark-as-sent helpers ----
       async function markSuneduSent(dniList) {
         try {
           if (!dniList.length) {
@@ -983,16 +1142,14 @@
 
           const ct = r.headers.get('content-type') || '';
           let j;
-          if (ct.includes('application/json')) {
-            j = await r.json();
-          } else {
+
+          if (ct.includes('application/json')) j = await r.json();
+          else {
             const text = await r.text();
             throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
           }
 
-          if (!r.ok || !j.ok) {
-            throw new Error(j.error || 'No se pudo marcar como enviado');
-          }
+          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo marcar como enviado');
 
           toast(`Se marcaron ${j.updated || dniList.length} registro(s) como Enviado`, false);
           await loadAdminData();
@@ -1002,16 +1159,13 @@
         }
       }
 
-      // ---- delete helpers ----
       async function deleteByDniList(dniList) {
         try {
           if (!dniList.length) {
             toast('Selecciona al menos un estudiante', true);
             return;
           }
-          if (!confirm('¿Eliminar las solicitudes seleccionadas? Esta acción no se puede deshacer.')) {
-            return;
-          }
+          if (!confirm('¿Eliminar las solicitudes seleccionadas? Esta acción no se puede deshacer.')) return;
 
           const r = await fetch('/api/admin/delete-submissions', {
             method: 'POST',
@@ -1021,16 +1175,14 @@
 
           const ct = r.headers.get('content-type') || '';
           let j;
-          if (ct.includes('application/json')) {
-            j = await r.json();
-          } else {
+
+          if (ct.includes('application/json')) j = await r.json();
+          else {
             const text = await r.text();
             throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
           }
 
-          if (!r.ok || !j.ok) {
-            throw new Error(j.error || 'No se pudo eliminar');
-          }
+          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo eliminar');
 
           toast(`Se eliminaron ${j.deleted} registro(s).`, false);
           await loadAdminData();
@@ -1046,13 +1198,13 @@
         return boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
       }
 
-      // --- header checkbox state (indeterminate / all / none) ---
       function updateHeaderCheckbox(kind) {
         const headerId = kind === 'approved'
           ? 'selectAllApproved'
           : kind === 'sunedu'
             ? 'selectAllSunedu'
             : null;
+
         const tbodyId = kind === 'approved'
           ? 'approvedRows'
           : kind === 'sunedu'
@@ -1077,7 +1229,6 @@
         header.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
       }
 
-      // --- Export CSV ---
       function exportApprovedToCSV() {
         const rows = datasets.approved || [];
         if (!rows.length) {
@@ -1104,13 +1255,10 @@
           csvLines.push(values.join(','));
         });
 
-        const blob = new Blob(['\uFEFF' + csvLines.join('\n')], {
-          type: 'text/csv;charset=utf-8;'
-        });
-
+        const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
 
+        const a = document.createElement('a');
         const now = new Date();
         const y = now.getFullYear();
         const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -1143,7 +1291,6 @@
         deleteByDniList(dniList);
       });
 
-      // drawer buttons
       document.getElementById('dGenerate').addEventListener('click', () => {
         if (!drawerRow || !drawerRow.dni) {
           toast('No se encontró DNI para este estudiante', true);
@@ -1160,7 +1307,6 @@
         markSuneduSent([drawerRow.dni]);
       });
 
-      // --- live search boxes ---
       const searchApproved = document.querySelector('#route-approved .search');
       const searchRejected = document.querySelector('#route-rejected .search');
       const searchSunedu = document.querySelector('#route-sunedu .search');
@@ -1186,16 +1332,13 @@
         });
       }
 
-      // --- "select all" header checkboxes ---
       const selectAllApproved = document.getElementById('selectAllApproved');
       if (selectAllApproved) {
         selectAllApproved.addEventListener('change', (e) => {
           const checked = e.target.checked;
           const tbody = document.getElementById('approvedRows');
           if (!tbody) return;
-          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => {
-            cb.checked = checked;
-          });
+          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => cb.checked = checked);
           e.target.indeterminate = false;
         });
       }
@@ -1206,29 +1349,22 @@
           const checked = e.target.checked;
           const tbody = document.getElementById('suneduRows');
           if (!tbody) return;
-          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => {
-            cb.checked = checked;
-          });
+          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => cb.checked = checked);
           e.target.indeterminate = false;
         });
       }
 
-      // update header checkbox when a row checkbox changes
       const approvedRowsEl = document.getElementById('approvedRows');
       if (approvedRowsEl) {
         approvedRowsEl.addEventListener('change', (e) => {
-          if (e.target.matches('input[type="checkbox"][data-dni]')) {
-            updateHeaderCheckbox('approved');
-          }
+          if (e.target.matches('input[type="checkbox"][data-dni]')) updateHeaderCheckbox('approved');
         });
       }
 
       const suneduRowsEl = document.getElementById('suneduRows');
       if (suneduRowsEl) {
         suneduRowsEl.addEventListener('change', (e) => {
-          if (e.target.matches('input[type="checkbox"][data-dni]')) {
-            updateHeaderCheckbox('sunedu');
-          }
+          if (e.target.matches('input[type="checkbox"][data-dni]')) updateHeaderCheckbox('sunedu');
         });
       }
 
