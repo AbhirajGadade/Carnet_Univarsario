@@ -279,11 +279,6 @@
             color: var(--primary-dark);
         }
 
-        .top-nav button:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-
         .nav-logout { flex: 0 0 auto; }
 
         .screen { display: none; }
@@ -552,7 +547,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .btn {
@@ -789,9 +783,10 @@
                                     <div class="profile-field-label">FACULTAD</div>
                                     <div class="profile-field-value" id="pfacultad">—</div>
                                 </div>
+                                <!-- ✅ NEW: Programa / Especialidad -->
                                 <div class="profile-field">
-                                    <div class="profile-field-label">CARRERA</div>
-                                    <div class="profile-field-value" id="pcarrera">—</div>
+                                    <div class="profile-field-label">PROGRAMA / ESPECIALIDAD</div>
+                                    <div class="profile-field-value" id="pprograma">—</div>
                                 </div>
                             </div>
                         </div>
@@ -897,7 +892,7 @@
                                 <i class="fas fa-cloud-upload-alt"></i> Guardar foto
                             </button>
 
-                            <button id="aiPhoto" type="button" class="btn secondary" disabled>
+                            <button id="aiPhoto" type="button" class="btn secondary">
                                 <i class="fas fa-wand-magic-sparkles"></i> Arreglar con IA
                             </button>
 
@@ -1053,19 +1048,6 @@
             }
         }
 
-        async function headExists(url, timeoutMs = 1500) {
-            const ac = new AbortController();
-            const t = setTimeout(() => ac.abort(), timeoutMs);
-            try {
-                const r = await fetch(url, { method: 'HEAD', cache: 'no-store', signal: ac.signal });
-                return r.ok;
-            } catch (e) {
-                return false;
-            } finally {
-                clearTimeout(t);
-            }
-        }
-
         function extractProgress(any) {
             const root = any?.data ?? any?.result ?? any ?? {};
             const cand =
@@ -1129,17 +1111,6 @@
                     setFlag(BASE_FORM_KEY, true);
                 }
                 renderProgress();
-                return;
-            }
-
-            // Fallback: if approved photo exists, mark photo + form as done
-            if (dni) {
-                const ok = await headExists(`/photos/approved/${encodeURIComponent(dni)}.jpg`);
-                if (ok) {
-                    setFlag(BASE_PHOTO_KEY, true);
-                    setFlag(BASE_FORM_KEY, true);
-                    renderProgress();
-                }
             }
         }
 
@@ -1150,7 +1121,7 @@
             const rawFormDone = getFlag(BASE_FORM_KEY);
             const rawPhotoDone = getFlag(BASE_PHOTO_KEY);
 
-            // ✅ FORCE ORDER
+            // ✅ FORCE ORDER (photo => form)
             const photoDone = rawPhotoDone;
             const formDone = rawFormDone || rawPhotoDone;
 
@@ -1223,12 +1194,20 @@
                 const email = s.email_institucional || s.emailInstitucional || s.email || '—';
                 const dni = s.dni || s.document || s.numeroDocumento || s.c_dni || '—';
                 const academicCode = s.academicCode || s.codigo || s.code || s.c_codalu || code || '—';
-                const specialty = s.schoolName || s.specialtyName || s.especialidad || s.carrera || '—';
+
+                // ✅ Make specialty/program more robust (this fixes "Programa no muestra")
+                const specialty =
+                    s.specialtyName || s.schoolName || s.especialidad || s.carrera ||
+                    s.programa || s.program || s.specialty || s.esp ||
+                    '—';
+
                 const phone = s.phone || s.telefono || s.celular || '—';
                 const gender = s.gender || s.genero || s.sexo || '—';
 
-                const faculty = s.facultad || s.faculty || s.facultyName || s.facultadNombre || '—';
-                const career = s.carrera || s.especialidad || s.specialtyName || s.schoolName || '—';
+                const faculty =
+                    s.facultad || s.faculty || s.facultyName || s.facultadNombre ||
+                    s.faculty_name || s.facultyDescription ||
+                    '—';
 
                 document.getElementById('pname').textContent = fullName;
                 document.getElementById('pemail').textContent = email;
@@ -1241,7 +1220,7 @@
                 document.getElementById('papellidos').textContent = lastName || '—';
                 document.getElementById('pnombres').textContent = firstName || '—';
                 document.getElementById('pfacultad').textContent = faculty || '—';
-                document.getElementById('pcarrera').textContent = career || '—';
+                document.getElementById('pprograma').textContent = specialty || '—';
 
                 document.getElementById('name_profile').value = fullName !== '—' ? fullName : '';
                 document.getElementById('email_profile').value = email !== '—' ? email : '';
@@ -1250,8 +1229,9 @@
                 document.getElementById('phone').value = phone !== '—' ? phone : '';
                 document.getElementById('gender_profile').value = gender !== '—' ? gender : '';
 
+                // Set the select (if matches)
                 const programSel = document.getElementById('program');
-                if (specialty !== '—') {
+                if (specialty && specialty !== '—') {
                     const target = String(specialty).trim().toLowerCase();
                     const match = Array.from(programSel.options)
                         .find(o => o.text.trim().toLowerCase() === target);
@@ -1263,6 +1243,7 @@
 
                 const dniValue = (dni && dni !== '—') ? String(dni) : '';
                 syncProgressFromServer(dniValue).catch(() => {});
+
             } catch (err) {
                 showError('No se pudo cargar el perfil: ' + (err.message || err));
             } finally {
@@ -1294,62 +1275,54 @@
 
             let currentFile = null;
 
+            const MAX_BYTES = 51200; // 50KB
+
             function isFormSaved() {
                 return getFlag(BASE_FORM_KEY);
             }
 
-            function setReadyMessage() {
-                // ✅ this is the message you asked to be green, but now it clearly says it's NOT saved yet
-                photoMsg.style.color = '#27ae60';
-                photoMsg.textContent = 'Foto seleccionada. Haz clic en "Guardar foto" para validar y guardar.';
+            function setMsg(text, color) {
+                photoMsg.textContent = text || '';
+                photoMsg.style.color = color || '';
             }
 
             function updatePhotoLockState() {
                 const locked = !isFormSaved();
-
                 if (locked) {
                     drop.classList.add('locked');
                     saveBtn.disabled = true;
                     aiBtn.disabled = true;
-
-                    photoMsg.style.color = '#e67e22';
-                    photoMsg.textContent = 'Primero guarda el formulario para poder subir tu foto.';
-                    return;
-                }
-
-                drop.classList.remove('locked');
-
-                // unlocked
-                if (currentFile) {
-                    saveBtn.disabled = false;
-                    aiBtn.disabled = false; // ✅ AI enabled when file exists + form saved
-                    setReadyMessage();
+                    setMsg('Primero guarda el formulario para poder subir tu foto.', '#e67e22');
                 } else {
-                    saveBtn.disabled = true;
-                    aiBtn.disabled = true;
-
-                    photoMsg.style.color = '';
-                    photoMsg.textContent = 'Selecciona una foto para validar y guardar.';
+                    drop.classList.remove('locked');
+                    aiBtn.disabled = !currentFile; // can use AI only when a file is selected
+                    // Save button enabled only if file selected and basic checks ok
+                    if (!currentFile) {
+                        saveBtn.disabled = true;
+                        // ✅ no green selection message
+                        setMsg('', '');
+                    } else {
+                        const isOkType = (currentFile.type === 'image/jpeg' || currentFile.type === 'image/png');
+                        const isOkSize = (currentFile.size <= MAX_BYTES);
+                        saveBtn.disabled = !(isOkType && isOkSize);
+                    }
                 }
             }
 
             async function callValidator(f) {
                 if (!f) {
-                    photoMsg.style.color = '#e74c3c';
-                    photoMsg.textContent = 'Primero selecciona una foto.';
+                    setMsg('Primero selecciona una foto.', '#e74c3c');
                     return;
                 }
 
                 saveBtn.disabled = true;
                 aiBtn.disabled = true;
-
-                photoMsg.style.color = '';
-                photoMsg.textContent = 'Validando foto…';
+                setMsg('Validando foto…', '');
 
                 const dni = document.getElementById('doc').value || document.getElementById('pdni').textContent || 'unknown';
                 const fullName = document.getElementById('pname').textContent || '';
                 const email = document.getElementById('pemail').textContent || '';
-                const esp = document.getElementById('pcarrera').textContent || '';
+                const esp = document.getElementById('pprograma').textContent || document.getElementById('program').value || '';
                 const facultad = document.getElementById('pfacultad').textContent || '';
 
                 try {
@@ -1372,72 +1345,44 @@
                         const issues = (data && data.issues && data.issues.length)
                             ? data.issues.join(' | ')
                             : `Error en la validación del servidor (HTTP ${resp.status}).`;
-                        photoMsg.style.color = '#e74c3c';
-                        photoMsg.textContent = 'Servidor rechazó la foto: ' + issues;
-
+                        setMsg('Servidor rechazó la foto: ' + issues, '#e74c3c');
                         setFlag(BASE_PHOTO_KEY, false);
                         renderProgress();
-
-                        updatePhotoLockState(); // re-enable buttons if possible
+                        aiBtn.disabled = false; // allow AI to try to fix
+                        updatePhotoLockState();
                         return;
                     }
 
                     if (data.ok === true) {
-                        photoMsg.style.color = '#27ae60';
-                        photoMsg.textContent = '✓ Foto aprobada y guardada correctamente.';
+                        // ✅ Only valid images will be saved (backend does it), show green success
+                        setMsg('✓ Foto aprobada y guardada correctamente.', '#27ae60');
 
-                        // ✅ if photo is ok, form is considered done too
                         setFlag(BASE_PHOTO_KEY, true);
-                        setFlag(BASE_FORM_KEY, true);
+                        setFlag(BASE_FORM_KEY, true); // photo implies form step done
 
                         renderProgress();
+                        aiBtn.disabled = false;
                         updatePhotoLockState();
                     } else {
                         const issues = data.issues && data.issues.length ? data.issues.join(' | ') : 'Foto rechazada por el validador.';
-                        photoMsg.style.color = '#e74c3c';
-                        photoMsg.textContent = issues;
-
+                        setMsg(issues, '#e74c3c');
                         setFlag(BASE_PHOTO_KEY, false);
                         renderProgress();
-
+                        aiBtn.disabled = false;
                         updatePhotoLockState();
                     }
                 } catch (err) {
-                    photoMsg.style.color = '#e74c3c';
-                    photoMsg.textContent = 'Error de conexión al validar: ' + err.message;
-
+                    setMsg('Error de conexión al validar: ' + (err.message || err), '#e74c3c');
                     setFlag(BASE_PHOTO_KEY, false);
                     renderProgress();
-
+                    aiBtn.disabled = false;
                     updatePhotoLockState();
                 }
             }
 
-            function showFile(f) {
-                currentFile = f;
-
-                const url = URL.createObjectURL(f);
-                imgPrev.src = url;
-
-                prev.style.display = 'grid';
-                mType.textContent = f.type || '—';
-                mSize.textContent = (f.size / 1024).toFixed(1) + ' KB';
-
-                const im = new Image();
-                im.onload = () => { mDim.textContent = `${im.width}×${im.height}`; };
-                im.src = url;
-
-                // selecting new file means not validated yet
-                setFlag(BASE_PHOTO_KEY, false);
-                renderProgress();
-
-                updatePhotoLockState();
-            }
-
             async function autoFixPhoto() {
                 if (!currentFile) {
-                    photoMsg.style.color = '#e74c3c';
-                    photoMsg.textContent = 'Primero selecciona una foto.';
+                    setMsg('Primero selecciona una foto.', '#e74c3c');
                     return;
                 }
                 if (!isFormSaved()) {
@@ -1447,9 +1392,7 @@
 
                 aiBtn.disabled = true;
                 saveBtn.disabled = true;
-
-                photoMsg.style.color = '';
-                photoMsg.textContent = 'Corrigiendo foto…';
+                setMsg('Corrigiendo foto…', '');
 
                 try {
                     const formData = new FormData();
@@ -1465,13 +1408,13 @@
                         const issues = (data && data.issues && data.issues.length)
                             ? data.issues.join(' | ')
                             : `No se pudo corregir la foto automáticamente (HTTP ${resp.status}).`;
-                        photoMsg.style.color = '#e74c3c';
-                        photoMsg.textContent = issues;
-
+                        setMsg(issues, '#e74c3c');
+                        aiBtn.disabled = false;
                         updatePhotoLockState();
                         return;
                     }
 
+                    // Preview fixed image
                     const dataUrl = data.data_url;
                     imgPrev.src = dataUrl;
                     prev.style.display = 'grid';
@@ -1480,7 +1423,7 @@
                     if (data.width && data.height) mDim.textContent = `${data.width}×${data.height}`;
                     mType.textContent = 'image/jpeg';
 
-                    // convert dataURL to File so /validate receives a real file
+                    // Convert data_url -> File so /validate uses fixed result
                     const blobResp = await fetch(dataUrl);
                     const blob = await blobResp.blob();
                     const baseName = (currentFile.name || 'foto').replace(/\.[^/.]+$/, '');
@@ -1490,19 +1433,67 @@
                     setFlag(BASE_PHOTO_KEY, false);
                     renderProgress();
 
-                    photoMsg.style.color = '#27ae60';
-                    photoMsg.textContent = 'Foto corregida. Ahora haz clic en "Guardar foto" para validarla.';
+                    // ✅ This is OK to be green (AI actually changed the file)
+                    setMsg('Foto corregida. Ahora haz clic en "Guardar foto" para validarla.', '#27ae60');
 
+                    aiBtn.disabled = false;
                     updatePhotoLockState();
                 } catch (err) {
-                    photoMsg.style.color = '#e74c3c';
-                    photoMsg.textContent = 'Error interno al intentar corregir la foto.';
-                    updatePhotoLockState();
-                } finally {
+                    setMsg('Error interno al intentar corregir la foto.', '#e74c3c');
                     aiBtn.disabled = false;
+                    updatePhotoLockState();
                 }
             }
 
+            function showFile(f) {
+                currentFile = f;
+
+                const url = URL.createObjectURL(f);
+                imgPrev.src = url;
+                prev.style.display = 'grid';
+
+                mType.textContent = f.type || '—';
+                mSize.textContent = (f.size / 1024).toFixed(1) + ' KB';
+
+                const im = new Image();
+                im.onload = () => { mDim.textContent = `${im.width}×${im.height}`; };
+                im.src = url;
+
+                // reset saved flag when selecting a new file
+                setFlag(BASE_PHOTO_KEY, false);
+                renderProgress();
+
+                // ✅ IMPORTANT: do NOT validate on select. Only show instant errors (type/size).
+                const isOkType = (f.type === 'image/jpeg' || f.type === 'image/png');
+                const isOkSize = (f.size <= MAX_BYTES);
+
+                if (!isOkType) {
+                    setMsg('Formato inválido. Solo se acepta JPG o PNG.', '#e74c3c');
+                    saveBtn.disabled = true;
+                    aiBtn.disabled = true;
+                    return;
+                }
+
+                if (!isOkSize) {
+                    setMsg(`Archivo muy grande (${(f.size/1024).toFixed(1)} KB). Debe ser ≤ 50 KB. Usa "Arreglar con IA" o elige otra foto.`, '#e74c3c');
+                    // allow AI fix if form is saved
+                    aiBtn.disabled = !isFormSaved();
+                    saveBtn.disabled = true;
+                    return;
+                }
+
+                // ✅ Valid selection: NO “green selection” message
+                setMsg('', '');
+
+                if (isFormSaved()) {
+                    aiBtn.disabled = false;
+                    saveBtn.disabled = false;
+                } else {
+                    updatePhotoLockState();
+                }
+            }
+
+            // Interactions
             drop.addEventListener('click', () => {
                 if (!isFormSaved()) { updatePhotoLockState(); return; }
                 fileInput.click();
@@ -1532,17 +1523,21 @@
             saveBtn.addEventListener('click', () => {
                 if (!isFormSaved()) { updatePhotoLockState(); return; }
                 if (!currentFile) {
-                    photoMsg.style.color = '#e67e22';
-                    photoMsg.textContent = 'Primero selecciona una foto.';
+                    setMsg('Primero selecciona una foto.', '#e67e22');
                     return;
                 }
                 callValidator(currentFile);
             });
 
-            // ✅ AI button works now
-            if (aiBtn) aiBtn.addEventListener('click', autoFixPhoto);
+            aiBtn.addEventListener('click', autoFixPhoto);
 
-            window.addEventListener('uma-form-saved', updatePhotoLockState);
+            window.addEventListener('uma-form-saved', () => {
+                // when form saved, unlock photo section if file already selected
+                updatePhotoLockState();
+            });
+
+            // init
+            aiBtn.disabled = true;
             updatePhotoLockState();
         })();
 
