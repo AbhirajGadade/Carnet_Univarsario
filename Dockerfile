@@ -20,5 +20,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose Render port
 ENV PORT=5000
 
-# Start both: python on 8000 (internal), node on $PORT (public)
-CMD bash -lc "uvicorn photo.validator_api:app --host 127.0.0.1 --port 8000 & node server/index.js"
+# Start both: python on 8001 (internal), node on $PORT (public)
+CMD bash -lc "uvicorn photo.validator_api:app --host 127.0.0.1 --port 8001 & node server/index.js"

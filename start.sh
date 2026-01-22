@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-# Start FastAPI in background (internal)
-uvicorn photo.validator_api:app --host 0.0.0.0 --port 8000 &
+# start FastAPI internally
+python -m uvicorn photo.validator_api:app --host 127.0.0.1 --port 8001 &
 
-# Start Node in foreground (Render expects this one to stay running)
+# start Node publicly (Koyeb checks this port)
 node server/index.js
