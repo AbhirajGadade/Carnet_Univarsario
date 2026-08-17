@@ -3,10 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>UMA — Panel de Administración</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
 
   <style>
     :root{
@@ -21,6 +29,7 @@
       --text:#0f172a;
 
       --card:#ffffff;
+
       --shadow:0 4px 12px rgba(240,36,84,.08);
       --shadow-hover:0 8px 24px rgba(240,36,84,.12);
 
@@ -28,13 +37,32 @@
       --radius-lg:16px;
     }
 
-    *{ box-sizing:border-box; }
+    *{
+      box-sizing:border-box;
+    }
 
     body{
       margin:0;
-      background: radial-gradient(circle at top left,#ffe3ee 0,#fffdfd 45%,#ffe3ee 100%);
+
+      background:
+        radial-gradient(
+          circle at top left,
+          #ffe3ee 0,
+          #fffdfd 45%,
+          #ffe3ee 100%
+        );
+
       color:var(--text);
-      font:14px/1.55 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+
+      font:
+        14px/1.55
+        "Inter",
+        system-ui,
+        -apple-system,
+        Segoe UI,
+        Roboto,
+        Arial,
+        sans-serif;
     }
 
     .container{
@@ -43,142 +71,221 @@
       padding:0 16px;
     }
 
-    /* ===== HEADER ===== */
+    /* =====================================================
+       HEADER
+    ===================================================== */
+
     .header{
       display:flex;
       align-items:center;
       justify-content:space-between;
+
       gap:12px;
+
       background:#fff;
+
       border:1px solid #ffe3ea;
       border-radius:16px;
+
       padding:12px 14px;
-      box-shadow: var(--shadow);
+
+      box-shadow:var(--shadow);
+
       margin-bottom:16px;
     }
 
     .brand{
       display:flex;
       align-items:center;
+
       gap:12px;
+
       min-width:0;
     }
 
     .brand img{
       height:36px;
       width:auto;
+
       object-fit:contain;
     }
 
     .brand h1{
       margin:0;
+
       font-size:18px;
       line-height:1.2;
     }
 
-    .muted{ color:var(--muted); font-size:13px; }
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
 
     .header-right{
       display:flex;
       align-items:center;
       justify-content:flex-end;
+
       gap:10px;
+
       flex-wrap:wrap;
     }
 
     .session-chip{
       display:inline-flex;
       align-items:center;
+
       gap:10px;
+
       padding:8px 18px;
+
       border-radius:999px;
+
       background:#fff0f4;
+
       border:1px solid #ffe0ea;
+
       font-size:14px;
       color:#111827;
+
       white-space:nowrap;
     }
 
     .session-icon{
       width:22px;
       height:22px;
+
       border-radius:999px;
+
       background:var(--primary);
+
       display:flex;
       align-items:center;
       justify-content:center;
+
       color:#fff;
       font-size:12px;
     }
 
-    /* Mobile-only logout in header */
     .header-logout-btn{
-      display:none; /* desktop hidden */
+      display:none;
+
       align-items:center;
       justify-content:center;
+
       gap:8px;
+
       border:none;
       border-radius:999px;
+
       padding:8px 16px;
+
       font-size:.95rem;
       font-weight:700;
+
       cursor:pointer;
-      background: linear-gradient(135deg,var(--primary-light),var(--primary));
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--primary-light),
+          var(--primary)
+        );
+
       color:#fff;
-      box-shadow: var(--shadow-hover);
+
+      box-shadow:var(--shadow-hover);
+
       white-space:nowrap;
     }
-    .header-logout-btn:hover{ filter:brightness(1.03); }
 
-    /* ===== APP LAYOUT (desktop) ===== */
+    .header-logout-btn:hover{
+      filter:brightness(1.03);
+    }
+
+    /* =====================================================
+       APP
+    ===================================================== */
+
     .app{
       display:grid;
-      grid-template-columns:260px 1fr;
+
+      grid-template-columns:
+        260px
+        1fr;
+
       gap:18px;
     }
 
-    /* important: prevent children from forcing width */
-    main{ min-width:0; }
+    main{
+      min-width:0;
+    }
 
     .card{
       background:var(--card);
+
       border:1px solid #ffe3ea;
       border-radius:16px;
-      box-shadow: var(--shadow);
+
+      box-shadow:var(--shadow);
     }
 
-    .pad{ padding:16px; }
+    .pad{
+      padding:16px;
+    }
 
-    .nav{ padding:10px; }
+    .nav{
+      padding:10px;
+    }
 
     .section{
       font-weight:800;
       font-size:12px;
+
       color:#4b5563;
+
       letter-spacing:.06em;
+
       margin:8px 8px 6px;
     }
 
     .link{
       appearance:none;
+
       width:100%;
+
       display:flex;
       align-items:center;
+
       gap:10px;
+
       padding:10px 12px;
+
       margin:6px 0;
+
       border-radius:12px;
+
       color:#0f172a;
+
       border:1px solid transparent;
+
       cursor:pointer;
+
       background:#fff;
+
       text-align:left;
+
       justify-content:flex-start;
+
       font-weight:700;
+
       min-width:0;
     }
 
-    .link i{ color:var(--primary); }
+    .link i{
+      color:var(--primary);
+    }
 
     .link:hover{
       background:#fff5f7;
@@ -187,257 +294,476 @@
 
     .link.active{
       outline:3px solid var(--ring);
+
       border-color:var(--outline);
+
       background:#fff0f4;
     }
 
-    /* labels: desktop shows long text */
-    .label-long{ display:inline; }
-    .label-short{ display:none; }
+    .label-long{
+      display:inline;
+    }
 
-    .screen{ display:none; }
-    .screen.active{ display:block; }
+    .label-short{
+      display:none;
+    }
+
+    .screen{
+      display:none;
+    }
+
+    .screen.active{
+      display:block;
+    }
+
+    /* =====================================================
+       TOOLBAR
+    ===================================================== */
 
     .toolbar{
       display:flex;
       align-items:center;
       justify-content:space-between;
+
       gap:12px;
+
       margin-bottom:10px;
     }
 
     .toolbar-left{
       display:flex;
       align-items:center;
+
       gap:8px;
+
       flex:1;
+
       min-width:0;
+
       flex-wrap:wrap;
     }
 
     .search{
       flex:1;
+
       border-radius:999px;
+
       border:1px solid #ffe0ea;
+
       padding:8px 12px;
+
       font-size:13px;
+
       background:#fff;
+
       min-width:240px;
     }
 
     .btn{
       cursor:pointer;
+
       display:inline-flex;
       align-items:center;
       justify-content:center;
+
       gap:6px;
+
       padding:8px 12px;
+
       border-radius:999px;
+
       border:1px solid #f02454;
-      background: linear-gradient(180deg,#f76385,#f02454);
+
+      background:
+        linear-gradient(
+          180deg,
+          #f76385,
+          #f02454
+        );
+
       color:#fff;
+
       font-weight:700;
       font-size:13px;
-      box-shadow:0 8px 20px rgba(240,36,84,.18);
+
+      box-shadow:
+        0 8px 20px
+        rgba(240,36,84,.18);
+
       white-space:nowrap;
       user-select:none;
     }
 
     .btn.ghost{
       background:transparent;
+
       color:var(--primary);
+
       border-color:#ffe0e7;
+
       box-shadow:none;
     }
 
     .btn-danger{
       background:#f44336;
+
       border-color:#f44336;
+
       color:#fff;
-      box-shadow:0 8px 20px rgba(244,67,54,0.25);
+
+      box-shadow:
+        0 8px 20px
+        rgba(244,67,54,0.25);
     }
-    .btn-danger:hover{ background:#d32f2f; border-color:#d32f2f; }
 
-    .btn:disabled{ opacity:.55; cursor:not-allowed; }
+    .btn-danger:hover{
+      background:#d32f2f;
+      border-color:#d32f2f;
+    }
 
-    /* ✅ NEW: button loading style */
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
     .btn.loading{
       opacity:.9;
+
       pointer-events:none;
+
       filter:saturate(.95);
     }
+
     .btn.loading i{
-      animation: spin 0.9s linear infinite;
+      animation:spin .9s linear infinite;
     }
 
-    /* ===== TABLES ===== */
+    /* =====================================================
+       TABLE
+    ===================================================== */
+
     .table-scroll{
       width:100%;
       max-width:100%;
+
       display:block;
-      overflow:visible; /* desktop unchanged */
+
+      overflow:visible;
     }
 
     table{
       width:100%;
+
       border-collapse:separate;
+
       border-spacing:0 8px;
     }
 
     thead th{
       padding:8px 10px;
+
       text-align:left;
+
       color:#475569;
+
       font-size:12px;
     }
 
-    tbody tr{ background:#fff; border:1px solid #fce4ec; }
+    tbody tr{
+      background:#fff;
+
+      border:1px solid #fce4ec;
+    }
 
     tbody td{
       padding:8px 10px;
+
       border-top:1px solid #fde7f0;
       border-bottom:1px solid #fde7f0;
+
       font-size:13px;
     }
 
     tbody td:first-child{
       border-left:1px solid #fde7f0;
-      border-radius:10px 0 0 10px;
+
+      border-radius:
+        10px
+        0
+        0
+        10px;
     }
 
     tbody td:last-child{
       border-right:1px solid #fde7f0;
-      border-radius:0 10px 10px 0;
+
+      border-radius:
+        0
+        10px
+        10px
+        0;
     }
 
-    .empty{ padding:16px; text-align:center; color:#9ca3af; }
+    .empty{
+      padding:16px;
+
+      text-align:center;
+
+      color:#9ca3af;
+    }
 
     .status-badge{
       display:inline-flex;
       align-items:center;
       justify-content:center;
+
       padding:2px 8px;
+
       font-size:11px;
+
       border-radius:999px;
+
       font-weight:600;
+
       white-space:nowrap;
     }
 
-    .status-approved{ background:#ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
-    .status-rejected{ background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
-    .status-pending{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+    .status-approved{
+      background:#ecfdf5;
+
+      color:#065f46;
+
+      border:1px solid #bbf7d0;
+    }
+
+    .status-rejected{
+      background:#fef2f2;
+
+      color:#b91c1c;
+
+      border:1px solid #fecaca;
+    }
+
+    .status-pending{
+      background:#eff6ff;
+
+      color:#1d4ed8;
+
+      border:1px solid #bfdbfe;
+    }
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
 
     #toast{
       position:fixed;
+
       right:16px;
       bottom:16px;
+
       display:flex;
       flex-direction:column;
+
       gap:6px;
+
       z-index:9999;
     }
 
     .pill{
       display:inline-flex;
       align-items:center;
+
       gap:6px;
+
       font-weight:700;
       font-size:12px;
+
       padding:6px 10px;
+
       border-radius:999px;
+
       border:1px solid var(--outline);
+
       background:#fff;
     }
-    .pill.info{ color:#a31231; background:#fff5f7; }
 
-    /* Drawer */
+    .pill.info{
+      color:#a31231;
+
+      background:#fff5f7;
+    }
+
+    /* =====================================================
+       DRAWER
+    ===================================================== */
+
     #drawer{
       position:fixed;
+
       top:0;
       right:0;
+
       width:360px;
       max-width:100%;
+
       height:100%;
+
       background:#fff;
+
       border-left:1px solid #ffe0ea;
-      box-shadow:-10px 0 40px rgba(15,23,42,.2);
-      transform:translateX(100%);
-      transition:transform .25s ease;
+
+      box-shadow:
+        -10px 0 40px
+        rgba(15,23,42,.2);
+
+      transform:
+        translateX(100%);
+
+      transition:
+        transform .25s ease;
+
       z-index:9998;
+
       display:flex;
       flex-direction:column;
     }
-    #drawer.open{ transform:translateX(0); }
+
+    #drawer.open{
+      transform:
+        translateX(0);
+    }
+
     #drawer header{
       padding:14px 16px;
-      border-bottom:1px solid #fef0f4;
+
+      border-bottom:
+        1px solid #fef0f4;
+
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:8px;
-    }
-    #drawer main{ padding:16px; overflow-y:auto; flex:1; }
-    #drawer footer{
-      padding:12px 16px;
-      border-top:1px solid #fef0f4;
-      display:flex;
-      justify-content:space-between;
+
       gap:8px;
     }
 
-    /* ===== Drawer photo loading overlay ===== */
+    #drawer main{
+      padding:16px;
+
+      overflow-y:auto;
+
+      flex:1;
+    }
+
+    #drawer footer{
+      padding:12px 16px;
+
+      border-top:
+        1px solid #fef0f4;
+
+      display:flex;
+      justify-content:space-between;
+
+      gap:8px;
+    }
+
+    /* =====================================================
+       DRAWER PHOTO
+    ===================================================== */
+
     .photo-wrap{
       width:140px;
       height:180px;
+
       border-radius:12px;
+
       border:1px solid #e5e7eb;
+
       background:#f9fafb;
+
       overflow:hidden;
+
       position:relative;
+
       flex:0 0 auto;
     }
 
     .photo-wrap img{
       width:100%;
       height:100%;
+
       object-fit:cover;
+
       display:block;
+
       opacity:1;
-      transition:opacity .18s ease;
+
+      transition:
+        opacity .18s ease;
     }
 
     .photo-skeleton{
       position:absolute;
+
       inset:0;
-      background: linear-gradient(90deg, #f2f4f8 0%, #e9edf5 45%, #f2f4f8 90%);
-      background-size: 220% 100%;
-      animation: shimmer 1.1s infinite linear;
+
+      background:
+        linear-gradient(
+          90deg,
+          #f2f4f8 0%,
+          #e9edf5 45%,
+          #f2f4f8 90%
+        );
+
+      background-size:
+        220% 100%;
+
+      animation:
+        shimmer 1.1s infinite linear;
+
       display:none;
     }
 
     .photo-spinner{
       position:absolute;
+
       inset:0;
+
       display:none;
+
       align-items:center;
       justify-content:center;
+
       font-size:24px;
-      color: var(--primary);
-      background: rgba(255,255,255,.55);
-      backdrop-filter: blur(2px);
+
+      color:var(--primary);
+
+      background:
+        rgba(255,255,255,.55);
+
+      backdrop-filter:
+        blur(2px);
     }
 
     .photo-fallback{
       position:absolute;
+
       inset:0;
+
       display:none;
+
       align-items:center;
       justify-content:center;
+
       text-align:center;
+
       padding:10px;
+
       color:#6b7280;
+
       font-weight:700;
       font-size:12px;
+
       background:#f9fafb;
     }
 
@@ -451,282 +777,650 @@
     }
 
     @keyframes shimmer{
-      0%{ background-position: 200% 0; }
-      100%{ background-position: -200% 0; }
+      0%{
+        background-position:200% 0;
+      }
+
+      100%{
+        background-position:-200% 0;
+      }
     }
 
     @keyframes spin{
-      to{ transform: rotate(360deg); }
+      to{
+        transform:rotate(360deg);
+      }
     }
 
     .photo-spinner i{
-      animation: spin 0.9s linear infinite;
+      animation:
+        spin .9s linear infinite;
     }
 
     .drawer-grid{
       display:grid;
-      grid-template-columns:auto 1fr;
+
+      grid-template-columns:
+        auto
+        1fr;
+
       gap:12px;
+
       align-items:flex-start;
+
       margin-bottom:12px;
     }
-    .drawer-meta{ font-size:13px; display:grid; gap:4px; }
+
+    .drawer-meta{
+      font-size:13px;
+
+      display:grid;
+
+      gap:4px;
+    }
+
     .drawer-label{
       font-size:11px;
+
       text-transform:uppercase;
+
       color:#6b7280;
+
       letter-spacing:.06em;
+
       font-weight:700;
     }
-    .drawer-value{ font-size:13px; word-break:break-all; }
+
+    .drawer-value{
+      font-size:13px;
+
+      word-break:break-all;
+    }
+
     .closeBtn{
       border-radius:999px;
+
       border:1px solid #e5e7eb;
+
       padding:4px 10px;
+
       font-size:12px;
+
       cursor:pointer;
+
       background:#fff;
     }
 
-    .code-with-checkbox{ display:inline-flex; align-items:center; gap:8px; }
-    .code-with-checkbox input{ margin:0; }
+    .code-with-checkbox{
+      display:inline-flex;
 
-    /* ===== MOBILE ===== */
-    @media (max-width: 768px), (hover:none) and (pointer:coarse){
-      body{ overflow-x:hidden; }
-      .container{ margin:14px auto; padding:0 12px; }
+      align-items:center;
+
+      gap:8px;
+    }
+
+    .code-with-checkbox input{
+      margin:0;
+    }
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
+
+    @media
+      (max-width:768px),
+      (hover:none) and (pointer:coarse){
+
+      body{
+        overflow-x:hidden;
+      }
+
+      .container{
+        margin:14px auto;
+
+        padding:0 12px;
+      }
 
       .header{
         flex-direction:column;
+
         gap:10px;
+
         text-align:center;
+
         padding:16px 18px;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
+
+        border-radius:
+          var(--radius-lg);
+
+        box-shadow:
+          var(--shadow);
       }
 
       .brand{
         flex-direction:column;
+
         gap:10px;
       }
 
-      .brand img{ height:64px; }
-      .brand h1{ font-size:1.5rem; }
+      .brand img{
+        height:64px;
+      }
+
+      .brand h1{
+        font-size:1.5rem;
+      }
 
       .header-right{
         justify-content:center;
+
         width:100%;
+
         gap:8px;
       }
 
       .header-logout-btn{
         display:inline-flex;
+
         width:100%;
+
         max-width:260px;
       }
 
       .app{
-        grid-template-columns:1fr;
+        grid-template-columns:
+          1fr;
+
         gap:14px;
       }
 
       aside.card{
         background:transparent;
+
         border:none;
+
         box-shadow:none;
       }
 
       .nav{
         display:flex;
+
         flex-wrap:wrap;
+
         gap:10px;
+
         background:#fff;
+
         padding:8px;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
-        border:1px solid #ffe3ea;
-        overflow:hidden; /* no scroll */
+
+        border-radius:
+          var(--radius-lg);
+
+        box-shadow:
+          var(--shadow);
+
+        border:
+          1px solid #ffe3ea;
+
+        overflow:hidden;
       }
 
-      .section{ display:none; }
+      .section{
+        display:none;
+      }
 
-      .label-long{ display:none; }
-      .label-short{ display:inline; }
+      .label-long{
+        display:none;
+      }
+
+      .label-short{
+        display:inline;
+      }
 
       .link{
-        flex: 1 1 calc(33.333% - 10px);
+        flex:
+          1 1
+          calc(33.333% - 10px);
+
         min-width:0;
+
         margin:0;
+
         border:none;
+
         background:transparent;
+
         border-radius:999px;
+
         padding:10px 10px;
-        font-size:0.92rem;
+
+        font-size:.92rem;
         font-weight:600;
-        color: var(--muted);
+
+        color:var(--muted);
+
         justify-content:center;
+
         text-align:center;
+
         gap:8px;
 
         white-space:nowrap;
+
         overflow:hidden;
+
         text-overflow:ellipsis;
       }
 
       .link i{
         flex:0 0 auto;
+
         font-size:1rem;
+
         color:inherit;
       }
 
       .link:hover{
         background:#fff5f7;
-        color: var(--primary-dark);
+
+        color:
+          var(--primary-dark);
       }
 
       .link.active{
         outline:none;
-        background: linear-gradient(135deg,var(--primary-light),var(--primary));
+
+        background:
+          linear-gradient(
+            135deg,
+            var(--primary-light),
+            var(--primary)
+          );
+
         color:#fff;
-        box-shadow: var(--shadow-hover);
+
+        box-shadow:
+          var(--shadow-hover);
       }
 
-      .link[data-route="logout"]{ display:none; }
+      .link[data-route="logout"]{
+        display:none;
+      }
 
-      .search{ min-width:200px; }
+      .search{
+        min-width:200px;
+      }
 
-      /* data scrolls, NOT tabs */
       .table-scroll{
         overflow-x:auto;
         overflow-y:hidden;
-        -webkit-overflow-scrolling:touch;
+
+        -webkit-overflow-scrolling:
+          touch;
+
         width:100%;
         max-width:100%;
       }
-      .table-scroll th, .table-scroll td{ white-space:nowrap; }
-      .table-scroll table{ min-width:1100px; }
 
-      section.card.pad{ overflow:hidden; }
+      .table-scroll th,
+      .table-scroll td{
+        white-space:nowrap;
+      }
+
+      .table-scroll table{
+        min-width:1100px;
+      }
+
+      section.card.pad{
+        overflow:hidden;
+      }
     }
   </style>
 </head>
 
+
 <body>
+
   <div class="container">
-    <!-- Header -->
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
     <div class="header">
+
       <div class="brand">
-        <img src="assets/images/logo-pdf.png" alt="UMA" />
+
+        <img
+          src="assets/images/logo-pdf.png"
+          alt="UMA"
+        />
+
         <div>
-          <h1>Panel Administrativo UMA</h1>
-          <div class="muted">Gestión de solicitudes y fotos</div>
+
+          <h1>
+            Panel Administrativo UMA
+          </h1>
+
+          <div class="muted">
+            Gestión de solicitudes y fotos
+          </div>
+
         </div>
+
       </div>
+
 
       <div class="header-right">
-        <div class="session-chip" id="sessionChip">
-          <div class="session-icon"><i class="fas fa-user"></i></div>
-          <span>Conectado</span>
+
+        <div
+          class="session-chip"
+          id="sessionChip"
+        >
+
+          <div class="session-icon">
+
+            <i class="fas fa-user"></i>
+
+          </div>
+
+          <span>
+            Conectado
+          </span>
+
         </div>
 
-        <!-- Mobile-only logout -->
-        <button type="button" class="header-logout-btn" id="logoutBtnHeader">
+
+        <button
+          type="button"
+          class="header-logout-btn"
+          id="logoutBtnHeader"
+        >
+
           <i class="fas fa-right-from-bracket"></i>
-          <span>Cerrar sesión</span>
+
+          <span>
+            Cerrar sesión
+          </span>
+
         </button>
+
       </div>
+
     </div>
 
+
+    <!-- =====================================================
+         APP
+    ====================================================== -->
+
     <div class="app">
+
+      <!-- ===================================================
+           SIDE NAV
+      ==================================================== -->
+
       <aside class="card">
-        <nav class="nav" id="sideNav">
-          <div class="section">GESTIÓN</div>
 
-          <button type="button" class="link" data-route="approved" title="Solicitudes Aprobadas">
+        <nav
+          class="nav"
+          id="sideNav"
+        >
+
+          <div class="section">
+            GESTIÓN
+          </div>
+
+
+          <button
+            type="button"
+            class="link"
+            data-route="approved"
+            title="Solicitudes Aprobadas"
+          >
+
             <i class="fas fa-circle-check"></i>
-            <span class="label-long">Solicitudes Aprobadas</span>
-            <span class="label-short">Aprobadas</span>
+
+            <span class="label-long">
+              Solicitudes Aprobadas
+            </span>
+
+            <span class="label-short">
+              Aprobadas
+            </span>
+
           </button>
 
-          <button type="button" class="link" data-route="rejected" title="Solicitudes Rechazadas">
+
+          <button
+            type="button"
+            class="link"
+            data-route="rejected"
+            title="Solicitudes Rechazadas"
+          >
+
             <i class="fas fa-circle-xmark"></i>
-            <span class="label-long">Solicitudes Rechazadas</span>
-            <span class="label-short">Rechazadas</span>
+
+            <span class="label-long">
+              Solicitudes Rechazadas
+            </span>
+
+            <span class="label-short">
+              Rechazadas
+            </span>
+
           </button>
 
-          <div class="section">SUNEDU</div>
 
-          <button type="button" class="link" data-route="sunedu" title="Envíos y Paquetes">
+          <div class="section">
+            SUNEDU
+          </div>
+
+
+          <button
+            type="button"
+            class="link"
+            data-route="sunedu"
+            title="Envíos y Paquetes"
+          >
+
             <i class="fas fa-box-archive"></i>
-            <span class="label-long">Envíos y Paquetes</span>
-            <span class="label-short">SUNEDU</span>
+
+            <span class="label-long">
+              Envíos y Paquetes
+            </span>
+
+            <span class="label-short">
+              SUNEDU
+            </span>
+
           </button>
 
-          <div class="section">SISTEMA</div>
 
-          <!-- Desktop logout (hidden on mobile) -->
-          <button type="button" class="link" data-route="logout">
+          <div class="section">
+            SISTEMA
+          </div>
+
+
+          <button
+            type="button"
+            class="link"
+            data-route="logout"
+          >
+
             <i class="fas fa-right-from-bracket"></i>
-            <span class="label-long">Cerrar sesión</span>
-            <span class="label-short">Salir</span>
+
+            <span class="label-long">
+              Cerrar sesión
+            </span>
+
+            <span class="label-short">
+              Salir
+            </span>
+
           </button>
+
         </nav>
+
       </aside>
 
+
+      <!-- ===================================================
+           MAIN
+      ==================================================== -->
+
       <main>
-        <!-- Aprobadas -->
-        <section id="route-approved" class="card pad screen active">
+
+        <!-- ===============================================
+             APPROVED
+        ================================================ -->
+
+        <section
+          id="route-approved"
+          class="card pad screen active"
+        >
+
           <div class="toolbar">
+
             <div class="toolbar-left">
-              <input type="text" class="search" placeholder="Buscar por código, nombre, correo o DNI…">
-              <button id="exportCSV" class="btn ghost" type="button">Exportar CSV</button>
-              <span class="muted" id="countApproved">0 resultado(s)</span>
+
+              <input
+                type="text"
+                class="search"
+                placeholder="Buscar por código, nombre, correo o DNI…"
+              />
+
+
+              <button
+                id="exportCSV"
+                class="btn ghost"
+                type="button"
+              >
+                Exportar CSV
+              </button>
+
+
+              <span
+                class="muted"
+                id="countApproved"
+              >
+                0 resultado(s)
+              </span>
+
             </div>
+
           </div>
 
-          <div class="toolbar" style="margin-top:4px;margin-bottom:8px;">
+
+          <div
+            class="toolbar"
+            style="
+              margin-top:4px;
+              margin-bottom:8px;
+            "
+          >
+
             <div class="toolbar-left">
-              <button class="btn btn-danger" id="btnDelete" type="button">Eliminar seleccionados</button>
+
+              <button
+                class="btn btn-danger"
+                id="btnDelete"
+                type="button"
+              >
+                Eliminar seleccionados
+              </button>
+
             </div>
+
           </div>
+
 
           <div class="table-scroll">
+
             <table>
+
               <thead>
+
                 <tr>
+
                   <th>
+
                     <label class="code-with-checkbox">
-                      <input type="checkbox" id="selectAllApproved">
-                      <span>Código</span>
+
+                      <input
+                        type="checkbox"
+                        id="selectAllApproved"
+                      />
+
+                      <span>
+                        Código
+                      </span>
+
                     </label>
+
                   </th>
+
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>FACULTAD</th>
                   <th>CARRERA</th>
                   <th>IA</th>
-                  <th>Supabase URL</th>
+                  <th>Foto</th>
                   <th></th>
+
                 </tr>
+
               </thead>
+
+
               <tbody id="approvedRows"></tbody>
+
             </table>
+
           </div>
+
         </section>
 
-        <!-- Rechazadas -->
-        <section id="route-rejected" class="card pad screen">
+
+        <!-- ===============================================
+             REJECTED
+        ================================================ -->
+
+        <section
+          id="route-rejected"
+          class="card pad screen"
+        >
+
           <div class="toolbar">
+
             <div class="toolbar-left">
-              <input type="text" class="search" placeholder="Buscar por código, nombre, correo o DNI…">
-              <span class="muted" id="countRejected">0 resultado(s)</span>
+
+              <input
+                type="text"
+                class="search"
+                placeholder="Buscar por código, nombre, correo o DNI…"
+              />
+
+              <span
+                class="muted"
+                id="countRejected"
+              >
+                0 resultado(s)
+              </span>
+
             </div>
+
           </div>
 
+
           <div class="table-scroll">
+
             <table>
+
               <thead>
+
                 <tr>
+
                   <th>Código</th>
                   <th>Nombre</th>
                   <th>Correo</th>
@@ -734,707 +1428,3414 @@
                   <th>CARRERA</th>
                   <th>Motivo</th>
                   <th></th>
+
                 </tr>
+
               </thead>
+
+
               <tbody id="rejectedRows"></tbody>
+
             </table>
+
           </div>
+
         </section>
 
-        <!-- SUNEDU -->
-        <section id="route-sunedu" class="card pad screen">
+
+        <!-- ===============================================
+             SUNEDU
+        ================================================ -->
+
+        <section
+          id="route-sunedu"
+          class="card pad screen"
+        >
+
           <div class="toolbar">
+
             <div class="toolbar-left">
-              <input type="text" class="search" placeholder="Buscar…">
-              <span class="muted" id="countSunedu">0 aprobado(s)</span>
+
+              <input
+                type="text"
+                class="search"
+                placeholder="Buscar…"
+              />
+
+              <span
+                class="muted"
+                id="countSunedu"
+              >
+                0 aprobado(s)
+              </span>
+
             </div>
+
           </div>
 
-          <div class="toolbar" style="margin-top:4px;margin-bottom:8px;">
+
+          <div
+            class="toolbar"
+            style="
+              margin-top:4px;
+              margin-bottom:8px;
+            "
+          >
+
             <div class="toolbar-left">
-              <button class="btn" id="btnZipSunedu" type="button">Generar Paquetes (SUNEDU)</button>
-              <button class="btn ghost" id="btnMarkSentSunedu" type="button">Marcar como Enviado</button>
-              <button class="btn btn-danger" id="btnDeleteSunedu" type="button">Eliminar seleccionados</button>
+
+              <button
+                class="btn"
+                id="btnZipSunedu"
+                type="button"
+              >
+                Generar Paquetes (SUNEDU)
+              </button>
+
+
+              <button
+                class="btn ghost"
+                id="btnMarkSentSunedu"
+                type="button"
+              >
+                Marcar como Enviado
+              </button>
+
+
+              <button
+                class="btn btn-danger"
+                id="btnDeleteSunedu"
+                type="button"
+              >
+                Eliminar seleccionados
+              </button>
+
             </div>
+
           </div>
+
 
           <div class="table-scroll">
+
             <table>
+
               <thead>
+
                 <tr>
+
                   <th>
+
                     <label class="code-with-checkbox">
-                      <input type="checkbox" id="selectAllSunedu">
-                      <span>Código</span>
+
+                      <input
+                        type="checkbox"
+                        id="selectAllSunedu"
+                      />
+
+                      <span>
+                        Código
+                      </span>
+
                     </label>
+
                   </th>
+
                   <th>Nombre</th>
                   <th>DNI</th>
                   <th>Estado SUNEDU</th>
                   <th>Actualizado</th>
                   <th></th>
+
                 </tr>
+
               </thead>
+
+
               <tbody id="suneduRows"></tbody>
+
             </table>
+
           </div>
+
         </section>
+
       </main>
+
     </div>
+
   </div>
+
+
+  <!-- =====================================================
+       TOAST
+  ====================================================== -->
 
   <div id="toast"></div>
 
-  <!-- Drawer detalle estudiante -->
+
+  <!-- =====================================================
+       STUDENT DRAWER
+  ====================================================== -->
+
   <aside id="drawer">
+
     <header>
+
       <div>
-        <div id="dTitle" style="font-weight:700;font-size:15px;">Estudiante</div>
-        <div id="dSub" class="muted" style="font-size:12px;">Detalle de solicitud</div>
+
+        <div
+          id="dTitle"
+          style="
+            font-weight:700;
+            font-size:15px;
+          "
+        >
+          Estudiante
+        </div>
+
+
+        <div
+          id="dSub"
+          class="muted"
+          style="font-size:12px;"
+        >
+          Detalle de solicitud
+        </div>
+
       </div>
-      <button id="closeDrawer" class="closeBtn" type="button">Cerrar</button>
+
+
+      <button
+        id="closeDrawer"
+        class="closeBtn"
+        type="button"
+      >
+        Cerrar
+      </button>
+
     </header>
 
+
     <main>
+
       <div class="drawer-grid">
-        <div class="photo-wrap" id="photoWrap">
+
+        <div
+          class="photo-wrap"
+          id="photoWrap"
+        >
+
           <div class="photo-skeleton"></div>
-          <div class="photo-spinner"><i class="fa-solid fa-spinner"></i></div>
-          <div class="photo-fallback" id="photoFallback">Cargando foto…</div>
-          <img id="dPhoto" alt="Foto" />
+
+
+          <div class="photo-spinner">
+
+            <i class="fa-solid fa-spinner"></i>
+
+          </div>
+
+
+          <div
+            class="photo-fallback"
+            id="photoFallback"
+          >
+            Cargando foto…
+          </div>
+
+
+          <img
+            id="dPhoto"
+            alt="Foto del estudiante"
+          />
+
         </div>
+
 
         <div class="drawer-meta">
-          <div><span class="drawer-label">IA</span><div id="dAI" class="drawer-value"></div></div>
-          <div><span class="drawer-label">SUNEDU</span><div id="dSunedu" class="drawer-value"></div></div>
-          <div><span class="drawer-label">Actualizado</span><div id="dUpdated" class="drawer-value"></div></div>
+
+          <div>
+
+            <span class="drawer-label">
+              IA
+            </span>
+
+            <div
+              id="dAI"
+              class="drawer-value"
+            ></div>
+
+          </div>
+
+
+          <div>
+
+            <span class="drawer-label">
+              SUNEDU
+            </span>
+
+            <div
+              id="dSunedu"
+              class="drawer-value"
+            ></div>
+
+          </div>
+
+
+          <div>
+
+            <span class="drawer-label">
+              Actualizado
+            </span>
+
+            <div
+              id="dUpdated"
+              class="drawer-value"
+            ></div>
+
+          </div>
+
         </div>
+
       </div>
+
 
       <div class="drawer-meta">
-        <div><span class="drawer-label">Código</span><div id="dCode" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">Nombre</span><div id="dName" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">DNI</span><div id="dDni" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">Correo</span><div id="dEmail" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">FACULTAD</span><div id="dFac" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">CARRERA</span><div id="dCarr" class="drawer-value">—</div></div>
-        <div><span class="drawer-label">URL Supabase</span><div id="dSupabase" class="drawer-value">—</div></div>
+
+        <div>
+
+          <span class="drawer-label">
+            Código
+          </span>
+
+          <div
+            id="dCode"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <span class="drawer-label">
+            Nombre
+          </span>
+
+          <div
+            id="dName"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <span class="drawer-label">
+            DNI
+          </span>
+
+          <div
+            id="dDni"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <span class="drawer-label">
+            Correo
+          </span>
+
+          <div
+            id="dEmail"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <span class="drawer-label">
+            FACULTAD
+          </span>
+
+          <div
+            id="dFac"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <span class="drawer-label">
+            CARRERA
+          </span>
+
+          <div
+            id="dCarr"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
+
+        <div>
+
+          <span class="drawer-label">
+            Foto MongoDB
+          </span>
+
+          <div
+            id="dMongoPhoto"
+            class="drawer-value"
+          >
+            —
+          </div>
+
+        </div>
+
       </div>
+
     </main>
 
+
     <footer>
-      <button id="dGenerate" class="btn" type="button">Generar ZIP</button>
-      <button id="dMarkSent" class="btn ghost" type="button">Marcar como Enviado</button>
+
+      <button
+        id="dGenerate"
+        class="btn"
+        type="button"
+      >
+        Generar ZIP
+      </button>
+
+
+      <button
+        id="dMarkSent"
+        class="btn ghost"
+        type="button"
+      >
+        Marcar como Enviado
+      </button>
+
     </footer>
+
   </aside>
 
-  <script>
-    (function () {
-      const TOKEN_KEY = 'uma_token_admin';
-      let datasets = { approved: [], rejected: [], sunedu: [] };
-      let currentFilters = { approved: '', rejected: '', sunedu: '' };
-      let drawerRow = null;
 
-      function toast(m, err) {
-        const el = document.createElement('div');
-        el.className = 'pill' + (err ? ' info' : '');
-        el.textContent = m;
-        document.getElementById('toast').appendChild(el);
-        setTimeout(() => el.remove(), 4000);
+  <!-- =====================================================
+       JAVASCRIPT
+  ====================================================== -->
+
+  <script>
+
+    (function () {
+
+      const TOKEN_KEY =
+        'uma_token_admin';
+
+
+      let datasets = {
+        approved: [],
+        rejected: [],
+        sunedu: [],
+      };
+
+
+      let currentFilters = {
+        approved: '',
+        rejected: '',
+        sunedu: '',
+      };
+
+
+      let drawerRow =
+        null;
+
+
+      // ===================================================
+      // HTML ESCAPE
+      // ===================================================
+
+      function escapeHtml(value) {
+
+        return String(
+          value ?? ''
+        )
+          .replace(
+            /&/g,
+            '&amp;'
+          )
+          .replace(
+            /</g,
+            '&lt;'
+          )
+          .replace(
+            />/g,
+            '&gt;'
+          )
+          .replace(
+            /"/g,
+            '&quot;'
+          )
+          .replace(
+            /'/g,
+            '&#039;'
+          );
       }
+
+
+      function escapeAttr(value) {
+
+        return escapeHtml(
+          value
+        );
+      }
+
+
+      // ===================================================
+      // DATE
+      // ===================================================
+
+      function formatDate(value) {
+
+        if (!value) {
+          return '—';
+        }
+
+
+        const date =
+          new Date(
+            value
+          );
+
+
+        if (
+          Number.isNaN(
+            date.getTime()
+          )
+        ) {
+          return '—';
+        }
+
+
+        return date.toLocaleString(
+          'es-PE'
+        );
+      }
+
+
+      // ===================================================
+      // TOAST
+      // ===================================================
+
+      function toast(
+        message,
+        error
+      ) {
+
+        const element =
+          document.createElement(
+            'div'
+          );
+
+
+        element.className =
+          'pill' +
+          (
+            error
+              ? ' info'
+              : ''
+          );
+
+
+        element.textContent =
+          message;
+
+
+        document
+          .getElementById(
+            'toast'
+          )
+          .appendChild(
+            element
+          );
+
+
+        setTimeout(
+          () =>
+            element.remove(),
+
+          4000
+        );
+      }
+
+
+      // ===================================================
+      // LOGOUT
+      // ===================================================
 
       function doLogout() {
+
         localStorage.clear();
-        location.replace('index.html');
+
+
+        location.replace(
+          'index.html'
+        );
       }
 
-      // ✅ NEW: button loading helper
-      function setBtnLoading(btn, on, loadingText) {
-        if (!btn) return;
+
+      // ===================================================
+      // BUTTON LOADING
+      // ===================================================
+
+      function setBtnLoading(
+        btn,
+        on,
+        loadingText
+      ) {
+
+        if (!btn) {
+          return;
+        }
+
+
         if (on) {
-          if (!btn.dataset.origHtml) btn.dataset.origHtml = btn.innerHTML;
-          if (!btn.dataset.origDisabled) btn.dataset.origDisabled = btn.disabled ? '1' : '0';
-          btn.classList.add('loading');
-          btn.disabled = true;
-          const text = loadingText || 'Procesando…';
-          btn.innerHTML = `<i class="fa-solid fa-spinner"></i> ${text}`;
+
+          if (
+            !btn.dataset.origHtml
+          ) {
+            btn.dataset.origHtml =
+              btn.innerHTML;
+          }
+
+
+          if (
+            !btn.dataset.origDisabled
+          ) {
+            btn.dataset.origDisabled =
+              btn.disabled
+                ? '1'
+                : '0';
+          }
+
+
+          btn.classList.add(
+            'loading'
+          );
+
+
+          btn.disabled =
+            true;
+
+
+          const text =
+            loadingText ||
+            'Procesando…';
+
+
+          btn.innerHTML =
+            `<i class="fa-solid fa-spinner"></i> ${escapeHtml(text)}`;
+
         } else {
-          btn.classList.remove('loading');
-          if (btn.dataset.origHtml) btn.innerHTML = btn.dataset.origHtml;
-          btn.disabled = (btn.dataset.origDisabled === '1');
+
+          btn.classList.remove(
+            'loading'
+          );
+
+
+          if (
+            btn.dataset.origHtml
+          ) {
+            btn.innerHTML =
+              btn.dataset.origHtml;
+          }
+
+
+          btn.disabled =
+            (
+              btn.dataset.origDisabled ===
+              '1'
+            );
+
+
           delete btn.dataset.origDisabled;
         }
       }
 
-      // Mobile header logout
-      const logoutBtnHeader = document.getElementById('logoutBtnHeader');
-      if (logoutBtnHeader) logoutBtnHeader.addEventListener('click', doLogout);
 
-      // Session chip
+      // ===================================================
+      // MOBILE LOGOUT
+      // ===================================================
+
+      const logoutBtnHeader =
+        document.getElementById(
+          'logoutBtnHeader'
+        );
+
+
+      if (logoutBtnHeader) {
+
+        logoutBtnHeader
+          .addEventListener(
+            'click',
+            doLogout
+          );
+      }
+
+
+      // ===================================================
+      // SESSION CHIP
+      // ===================================================
+
       (function guard() {
-        const role = localStorage.getItem('uma_session_role');
-        const email = localStorage.getItem('uma_session_email') || '';
-        const code = localStorage.getItem('uma_session_code') || '';
-        const chip = document.getElementById('sessionChip');
-        const span = chip.querySelector('span');
 
-        if (role !== 'admin' || !localStorage.getItem(TOKEN_KEY)) {
-          span.textContent = 'Modo demo admin';
+        const role =
+          localStorage.getItem(
+            'uma_session_role'
+          );
+
+
+        const email =
+          localStorage.getItem(
+            'uma_session_email'
+          ) || '';
+
+
+        const code =
+          localStorage.getItem(
+            'uma_session_code'
+          ) || '';
+
+
+        const chip =
+          document.getElementById(
+            'sessionChip'
+          );
+
+
+        const span =
+          chip.querySelector(
+            'span'
+          );
+
+
+        if (
+          role !== 'admin' ||
+          !localStorage.getItem(
+            TOKEN_KEY
+          )
+        ) {
+
+          span.textContent =
+            'Modo demo admin';
+
           return;
         }
 
-        const who = code || email || 'admin';
-        span.textContent = `Conectado: ${who}`;
+
+        const who =
+          code ||
+          email ||
+          'admin';
+
+
+        span.textContent =
+          `Conectado: ${who}`;
+
       })();
 
+
+      // ===================================================
+      // NAVIGATION
+      // ===================================================
+
       function goto(hash) {
-        document.querySelectorAll('.link').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.link[data-route="${hash}"]`)?.classList.add('active');
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('route-' + hash).classList.add('active');
+
+        document
+          .querySelectorAll(
+            '.link'
+          )
+          .forEach(
+            button =>
+              button.classList.remove(
+                'active'
+              )
+          );
+
+
+        document
+          .querySelector(
+            `.link[data-route="${hash}"]`
+          )
+          ?.classList.add(
+            'active'
+          );
+
+
+        document
+          .querySelectorAll(
+            '.screen'
+          )
+          .forEach(
+            screen =>
+              screen.classList.remove(
+                'active'
+              )
+          );
+
+
+        const target =
+          document.getElementById(
+            'route-' + hash
+          );
+
+
+        if (target) {
+          target.classList.add(
+            'active'
+          );
+        }
       }
 
-      document.getElementById('sideNav').addEventListener('click', (e) => {
-        const btn = e.target.closest('button.link');
-        if (!btn) return;
 
-        if (btn.dataset.route === 'logout') {
-          doLogout();
-          return;
-        }
-        goto(btn.dataset.route);
-      });
-      goto('approved');
+      document
+        .getElementById(
+          'sideNav'
+        )
+        .addEventListener(
+          'click',
 
-      // Drawer refs
-      const drawer = document.getElementById('drawer');
-      const dTitle = document.getElementById('dTitle');
-      const dSub = document.getElementById('dSub');
-      const dPhoto = document.getElementById('dPhoto');
-      const photoWrap = document.getElementById('photoWrap');
-      const photoFallback = document.getElementById('photoFallback');
+          event => {
 
-      const dAI = document.getElementById('dAI');
-      const dSunedu = document.getElementById('dSunedu');
-      const dName = document.getElementById('dName');
-      const dDni = document.getElementById('dDni');
-      const dEmail = document.getElementById('dEmail');
-      const dFac = document.getElementById('dFac');
-      const dCarr = document.getElementById('dCarr');
-      const dUpdated = document.getElementById('dUpdated');
-      const dCode = document.getElementById('dCode');
-      const dSupabase = document.getElementById('dSupabase');
+            const btn =
+              event.target.closest(
+                'button.link'
+              );
 
-      document.getElementById('closeDrawer').addEventListener('click', () => drawer.classList.remove('open'));
+
+            if (!btn) {
+              return;
+            }
+
+
+            if (
+              btn.dataset.route ===
+              'logout'
+            ) {
+
+              doLogout();
+
+              return;
+            }
+
+
+            goto(
+              btn.dataset.route
+            );
+          }
+        );
+
+
+      goto(
+        'approved'
+      );
+
+
+      // ===================================================
+      // DRAWER REFERENCES
+      // ===================================================
+
+      const drawer =
+        document.getElementById(
+          'drawer'
+        );
+
+
+      const dTitle =
+        document.getElementById(
+          'dTitle'
+        );
+
+
+      const dSub =
+        document.getElementById(
+          'dSub'
+        );
+
+
+      const dPhoto =
+        document.getElementById(
+          'dPhoto'
+        );
+
+
+      const photoWrap =
+        document.getElementById(
+          'photoWrap'
+        );
+
+
+      const photoFallback =
+        document.getElementById(
+          'photoFallback'
+        );
+
+
+      const dAI =
+        document.getElementById(
+          'dAI'
+        );
+
+
+      const dSunedu =
+        document.getElementById(
+          'dSunedu'
+        );
+
+
+      const dName =
+        document.getElementById(
+          'dName'
+        );
+
+
+      const dDni =
+        document.getElementById(
+          'dDni'
+        );
+
+
+      const dEmail =
+        document.getElementById(
+          'dEmail'
+        );
+
+
+      const dFac =
+        document.getElementById(
+          'dFac'
+        );
+
+
+      const dCarr =
+        document.getElementById(
+          'dCarr'
+        );
+
+
+      const dUpdated =
+        document.getElementById(
+          'dUpdated'
+        );
+
+
+      const dCode =
+        document.getElementById(
+          'dCode'
+        );
+
+
+      const dMongoPhoto =
+        document.getElementById(
+          'dMongoPhoto'
+        );
+
+
+      const dGenerate =
+        document.getElementById(
+          'dGenerate'
+        );
+
+
+      const dMarkSent =
+        document.getElementById(
+          'dMarkSent'
+        );
+
+
+      document
+        .getElementById(
+          'closeDrawer'
+        )
+        .addEventListener(
+          'click',
+
+          () =>
+            drawer.classList.remove(
+              'open'
+            )
+        );
+
+
+      // ===================================================
+      // MONGODB PHOTO URL
+      //
+      // Backend:
+      //
+      // GET /api/admin/photo/:dni
+      //
+      // Only approved students have a stored photo.
+      // ===================================================
 
       function getPhotoUrl(row) {
-        if (row.photoUrl) return row.photoUrl;
-        if (row.supabase_url) return row.supabase_url;
-        if (row.relative_path) {
-          const p = String(row.relative_path);
-          return p.startsWith('/') ? p : '/' + p;
+
+        if (
+          !row ||
+          row.category !==
+            'approved' ||
+          !row.dni
+        ) {
+          return '';
         }
-        if (row.dni) return '/photos/approved/' + row.dni + '.jpg';
-        return '';
+
+
+        // Explicitly no photo stored.
+        if (
+          row.hasPhoto ===
+          false
+        ) {
+          return '';
+        }
+
+
+        // mongoStorage.js returns this URL.
+        if (row.photoUrl) {
+          return String(
+            row.photoUrl
+          );
+        }
+
+
+        // Safe fallback using the DNI.
+        return (
+          '/api/admin/photo/' +
+          encodeURIComponent(
+            row.dni
+          )
+        );
       }
 
-      function setPhotoLoadingState(isLoading) {
-        photoWrap.classList.remove('error');
+
+      // ===================================================
+      // PHOTO LOADING
+      // ===================================================
+
+      function setPhotoLoadingState(
+        isLoading
+      ) {
+
+        photoWrap.classList.remove(
+          'error'
+        );
+
+
         if (isLoading) {
-          photoWrap.classList.add('loading');
-          dPhoto.style.opacity = '0';
-          photoFallback.textContent = 'Cargando foto…';
-          photoFallback.style.display = 'none';
+
+          photoWrap.classList.add(
+            'loading'
+          );
+
+
+          dPhoto.style.opacity =
+            '0';
+
+
+          photoFallback.textContent =
+            'Cargando foto…';
+
+
+          photoFallback.style.display =
+            'none';
+
         } else {
-          photoWrap.classList.remove('loading');
-          dPhoto.style.opacity = '1';
+
+          photoWrap.classList.remove(
+            'loading'
+          );
+
+
+          dPhoto.style.opacity =
+            '1';
         }
       }
 
-      function setPhotoErrorState(message) {
-        photoWrap.classList.remove('loading');
-        photoWrap.classList.add('error');
-        dPhoto.style.opacity = '0';
-        dPhoto.src = '';
-        photoFallback.textContent = message || 'No se pudo cargar la foto';
+
+      function setPhotoErrorState(
+        message
+      ) {
+
+        photoWrap.classList.remove(
+          'loading'
+        );
+
+
+        photoWrap.classList.add(
+          'error'
+        );
+
+
+        dPhoto.style.opacity =
+          '0';
+
+
+        dPhoto.removeAttribute(
+          'src'
+        );
+
+
+        photoFallback.textContent =
+          message ||
+          'No se pudo cargar la foto';
       }
 
-      function openDrawer(kind, row) {
-        drawerRow = row;
 
-        dTitle.textContent = row.name || 'Estudiante';
-        dSub.textContent = kind === 'rejected' ? 'Solicitud rechazada' : 'Solicitud aprobada';
+      // ===================================================
+      // OPEN DRAWER
+      // ===================================================
 
-        const photoUrl = getPhotoUrl(row);
+      function openDrawer(
+        kind,
+        row
+      ) {
 
-        setPhotoLoadingState(true);
-        dPhoto.onload = null;
-        dPhoto.onerror = null;
+        drawerRow =
+          row;
 
-        if (!photoUrl) {
-          setPhotoErrorState('Sin foto disponible');
+
+        const approved =
+          row.category ===
+          'approved';
+
+
+        dTitle.textContent =
+          row.name ||
+          'Estudiante';
+
+
+        dSub.textContent =
+          approved
+            ? 'Solicitud aprobada'
+            : 'Solicitud rechazada';
+
+
+        // -----------------------------------------------
+        // PHOTO
+        // -----------------------------------------------
+
+        const photoUrl =
+          getPhotoUrl(
+            row
+          );
+
+
+        dPhoto.onload =
+          null;
+
+
+        dPhoto.onerror =
+          null;
+
+
+        if (
+          !approved ||
+          !photoUrl
+        ) {
+
+          setPhotoErrorState(
+            approved
+              ? 'Sin foto almacenada'
+              : 'La foto rechazada no se almacena'
+          );
+
         } else {
-          dPhoto.onload = () => setPhotoLoadingState(false);
-          dPhoto.onerror = () => setPhotoErrorState('No se pudo cargar la foto');
-          dPhoto.src = photoUrl;
+
+          setPhotoLoadingState(
+            true
+          );
+
+
+          dPhoto.onload =
+            () =>
+              setPhotoLoadingState(
+                false
+              );
+
+
+          dPhoto.onerror =
+            () =>
+              setPhotoErrorState(
+                'No se pudo cargar la foto'
+              );
+
+
+          dPhoto.src =
+            photoUrl;
         }
 
-        const ok = row.category === 'approved';
 
-        dAI.textContent = ok ? 'Aprobada por IA' : 'Rechazada por IA';
-        dAI.className = 'status-badge ' + (ok ? 'status-approved' : 'status-rejected');
+        // -----------------------------------------------
+        // VALIDATION STATUS
+        // -----------------------------------------------
 
-        const sunStatus = row.suneduStatus || 'Pendiente';
-        dSunedu.textContent = sunStatus;
-        dSunedu.className = 'status-badge ' + (sunStatus === 'Enviado' ? 'status-approved' : 'status-pending');
+        dAI.textContent =
+          approved
+            ? 'Aprobada por IA'
+            : 'Rechazada por IA';
 
-        dCode.textContent = row.code || row.codigo || '—';
-        dName.textContent = row.name || '—';
-        dDni.textContent = row.dni || '—';
-        dEmail.textContent = row.email || '—';
-        dFac.textContent = row.facultad || row.faculty || '—';
-        dCarr.textContent = row.carrera || row.esp || '—';
-        dUpdated.textContent = row.updatedAt ? new Date(row.updatedAt).toLocaleString('es-PE') : '—';
 
-        const linkUrl = row.supabase_url || photoUrl;
-        if (linkUrl) dSupabase.innerHTML = `<a href="${linkUrl}" target="_blank" rel="noopener">Abrir foto</a>`;
-        else dSupabase.textContent = '—';
+        dAI.className =
+          'status-badge ' +
+          (
+            approved
+              ? 'status-approved'
+              : 'status-rejected'
+          );
 
-        drawer.classList.add('open');
+
+        // -----------------------------------------------
+        // SUNEDU
+        // -----------------------------------------------
+
+        const sunStatus =
+          row.suneduStatus ||
+          'Pendiente';
+
+
+        dSunedu.textContent =
+          sunStatus;
+
+
+        dSunedu.className =
+          'status-badge ' +
+          (
+            sunStatus ===
+            'Enviado'
+              ? 'status-approved'
+              : 'status-pending'
+          );
+
+
+        // -----------------------------------------------
+        // STUDENT INFO
+        // -----------------------------------------------
+
+        dCode.textContent =
+          row.code ||
+          row.codigo ||
+          '—';
+
+
+        dName.textContent =
+          row.name ||
+          '—';
+
+
+        dDni.textContent =
+          row.dni ||
+          '—';
+
+
+        dEmail.textContent =
+          row.email ||
+          '—';
+
+
+        dFac.textContent =
+          row.facultad ||
+          row.faculty ||
+          '—';
+
+
+        dCarr.textContent =
+          row.carrera ||
+          row.esp ||
+          '—';
+
+
+        dUpdated.textContent =
+          formatDate(
+            row.updatedAt
+          );
+
+
+        // -----------------------------------------------
+        // MONGODB PHOTO LINK
+        // -----------------------------------------------
+
+        if (
+          approved &&
+          photoUrl
+        ) {
+
+          dMongoPhoto.innerHTML =
+            `
+              <a
+                href="${escapeAttr(photoUrl)}"
+                target="_blank"
+                rel="noopener"
+              >
+                Abrir foto
+              </a>
+            `;
+
+        } else {
+
+          dMongoPhoto.textContent =
+            approved
+              ? 'Sin foto almacenada'
+              : 'No almacenada';
+        }
+
+
+        // -----------------------------------------------
+        // DRAWER ACTIONS
+        //
+        // Rejected students cannot generate a SUNEDU ZIP
+        // and cannot be marked as sent.
+        // -----------------------------------------------
+
+        dGenerate.style.display =
+          approved
+            ? 'inline-flex'
+            : 'none';
+
+
+        dMarkSent.style.display =
+          approved
+            ? 'inline-flex'
+            : 'none';
+
+
+        drawer.classList.add(
+          'open'
+        );
       }
 
-      function renderEmptyRow(tbodyId, colSpan, text) {
-        const tb = document.getElementById(tbodyId);
-        tb.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty">${text}</div></td></tr>`;
+
+      // ===================================================
+      // EMPTY TABLE
+      // ===================================================
+
+      function renderEmptyRow(
+        tbodyId,
+        colSpan,
+        text
+      ) {
+
+        const tbody =
+          document.getElementById(
+            tbodyId
+          );
+
+
+        tbody.innerHTML =
+          `
+          <tr>
+            <td colspan="${colSpan}">
+              <div class="empty">
+                ${escapeHtml(text)}
+              </div>
+            </td>
+          </tr>
+          `;
       }
 
-      function renderTable(tbodyId, rows, kind, ds) {
-        const tb = document.getElementById(tbodyId);
+
+      // ===================================================
+      // TABLE RENDERING
+      // ===================================================
+
+      function renderTable(
+        tbodyId,
+        rows,
+        kind,
+        ds
+      ) {
+
+        const tbody =
+          document.getElementById(
+            tbodyId
+          );
+
 
         if (!rows.length) {
-          if (kind === 'approved') renderEmptyRow(tbodyId, 8, 'Sin solicitudes aprobadas aún.');
-          else if (kind === 'rejected') renderEmptyRow(tbodyId, 7, 'Sin solicitudes rechazadas.');
-          else renderEmptyRow(tbodyId, 6, 'No hay aprobados para SUNEDU.');
+
+          if (
+            kind ===
+            'approved'
+          ) {
+
+            renderEmptyRow(
+              tbodyId,
+              8,
+              'Sin solicitudes aprobadas aún.'
+            );
+
+          } else if (
+            kind ===
+            'rejected'
+          ) {
+
+            renderEmptyRow(
+              tbodyId,
+              7,
+              'Sin solicitudes rechazadas.'
+            );
+
+          } else {
+
+            renderEmptyRow(
+              tbodyId,
+              6,
+              'No hay aprobados para SUNEDU.'
+            );
+          }
+
+
           return;
         }
 
-        if (kind === 'approved') {
-          tb.innerHTML = rows.map((r, i) => {
-            const iaOk = r.category === 'approved';
-            const code = r.code || r.codigo || '—';
-            const name = r.name || '—';
-            const email = r.email || '—';
-            const facultad = r.facultad || r.faculty || '—';
-            const carrera = r.carrera || r.esp || '—';
 
-            const linkUrl = r.supabase_url || getPhotoUrl(r);
-            const supaLink = linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener">Abrir</a>` : '—';
+        // =================================================
+        // APPROVED
+        // =================================================
 
-            return `
-              <tr>
-                <td>
-                  <label class="code-with-checkbox">
-                    <input type="checkbox" data-dni="${r.dni || ''}">
-                    <span>${code}</span>
-                  </label>
-                </td>
-                <td>${name}</td>
-                <td>${email}</td>
-                <td>${facultad}</td>
-                <td>${carrera}</td>
-                <td>
-                  <span class="status-badge ${iaOk ? 'status-approved' : 'status-rejected'}">
-                    ${iaOk ? 'Aprobada por IA' : 'Rechazada por IA'}
-                  </span>
-                </td>
-                <td>${supaLink}</td>
-                <td><button class="btn ghost viewBtn" data-kind="approved" data-index="${i}" type="button">Ver</button></td>
-              </tr>`;
-          }).join('');
-        } else if (kind === 'rejected') {
-          tb.innerHTML = rows.map((r, i) => `
-            <tr>
-              <td>${r.code || r.codigo || '—'}</td>
-              <td>${r.name || '—'}</td>
-              <td>${r.email || '—'}</td>
-              <td>${r.facultad || r.faculty || '—'}</td>
-              <td>${r.carrera || r.esp || '—'}</td>
-              <td>${(r.issues && r.issues.join(' | ')) || '—'}</td>
-              <td><button class="btn ghost viewBtn" data-kind="rejected" data-index="${i}" type="button">Ver</button></td>
-            </tr>`).join('');
-        } else if (kind === 'sunedu') {
-          tb.innerHTML = rows.map((r, i) => `
-            <tr>
-              <td>
-                <label class="code-with-checkbox">
-                  <input type="checkbox" data-dni="${r.dni || ''}">
-                  <span>${r.codigo || r.code || '—'}</span>
-                </label>
-              </td>
-              <td>${r.name || '—'}</td>
-              <td>${r.dni || '—'}</td>
-              <td>
-                <span class="status-badge ${r.suneduStatus === 'Enviado' ? 'status-approved' : 'status-pending'}">
-                  ${r.suneduStatus || 'Pendiente'}
-                </span>
-              </td>
-              <td>${r.updatedAt ? new Date(r.updatedAt).toLocaleString('es-PE') : '—'}</td>
-              <td><button class="btn ghost viewBtn" data-kind="sunedu" data-index="${i}" type="button">Ver</button></td>
-            </tr>`).join('');
+        if (
+          kind ===
+          'approved'
+        ) {
+
+          tbody.innerHTML =
+            rows
+              .map(
+                (row, index) => {
+
+                  const code =
+                    row.code ||
+                    row.codigo ||
+                    '—';
+
+
+                  const name =
+                    row.name ||
+                    '—';
+
+
+                  const email =
+                    row.email ||
+                    '—';
+
+
+                  const facultad =
+                    row.facultad ||
+                    row.faculty ||
+                    '—';
+
+
+                  const carrera =
+                    row.carrera ||
+                    row.esp ||
+                    '—';
+
+
+                  const photoUrl =
+                    getPhotoUrl(
+                      row
+                    );
+
+
+                  const photoLink =
+                    photoUrl
+                      ? `
+                        <a
+                          href="${escapeAttr(photoUrl)}"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          Abrir
+                        </a>
+                      `
+                      : '—';
+
+
+                  return `
+                    <tr>
+
+                      <td>
+
+                        <label class="code-with-checkbox">
+
+                          <input
+                            type="checkbox"
+                            data-dni="${escapeAttr(row.dni || '')}"
+                          >
+
+                          <span>
+                            ${escapeHtml(code)}
+                          </span>
+
+                        </label>
+
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(name)}
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(email)}
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(facultad)}
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(carrera)}
+                      </td>
+
+
+                      <td>
+
+                        <span
+                          class="
+                            status-badge
+                            status-approved
+                          "
+                        >
+                          Aprobada por IA
+                        </span>
+
+                      </td>
+
+
+                      <td>
+                        ${photoLink}
+                      </td>
+
+
+                      <td>
+
+                        <button
+                          class="btn ghost viewBtn"
+                          data-kind="approved"
+                          data-index="${index}"
+                          type="button"
+                        >
+                          Ver
+                        </button>
+
+                      </td>
+
+                    </tr>
+                  `;
+                }
+              )
+              .join('');
         }
 
-        tb.querySelectorAll('.viewBtn').forEach(btn => {
-          const kindBtn = btn.dataset.kind;
-          const idx = parseInt(btn.dataset.index, 10);
-          btn.addEventListener('click', () => {
-            const srcArr = ds[kindBtn] || [];
-            const row = srcArr[idx];
-            if (row) openDrawer(kindBtn, row);
-          });
-        });
+
+        // =================================================
+        // REJECTED
+        // =================================================
+
+        else if (
+          kind ===
+          'rejected'
+        ) {
+
+          tbody.innerHTML =
+            rows
+              .map(
+                (row, index) => {
+
+                  const issues =
+                    Array.isArray(
+                      row.issues
+                    )
+                      ? row.issues.join(
+                          ' | '
+                        )
+                      : row.issues ||
+                        '—';
+
+
+                  return `
+                    <tr>
+
+                      <td>
+                        ${escapeHtml(row.code || row.codigo || '—')}
+                      </td>
+
+                      <td>
+                        ${escapeHtml(row.name || '—')}
+                      </td>
+
+                      <td>
+                        ${escapeHtml(row.email || '—')}
+                      </td>
+
+                      <td>
+                        ${escapeHtml(row.facultad || row.faculty || '—')}
+                      </td>
+
+                      <td>
+                        ${escapeHtml(row.carrera || row.esp || '—')}
+                      </td>
+
+                      <td>
+                        ${escapeHtml(issues)}
+                      </td>
+
+                      <td>
+
+                        <button
+                          class="btn ghost viewBtn"
+                          data-kind="rejected"
+                          data-index="${index}"
+                          type="button"
+                        >
+                          Ver
+                        </button>
+
+                      </td>
+
+                    </tr>
+                  `;
+                }
+              )
+              .join('');
+        }
+
+
+        // =================================================
+        // SUNEDU
+        // =================================================
+
+        else if (
+          kind ===
+          'sunedu'
+        ) {
+
+          tbody.innerHTML =
+            rows
+              .map(
+                (row, index) => {
+
+                  const suneduStatus =
+                    row.suneduStatus ||
+                    'Pendiente';
+
+
+                  const statusClass =
+                    suneduStatus ===
+                    'Enviado'
+                      ? 'status-approved'
+                      : 'status-pending';
+
+
+                  return `
+                    <tr>
+
+                      <td>
+
+                        <label class="code-with-checkbox">
+
+                          <input
+                            type="checkbox"
+                            data-dni="${escapeAttr(row.dni || '')}"
+                          >
+
+                          <span>
+                            ${escapeHtml(row.codigo || row.code || '—')}
+                          </span>
+
+                        </label>
+
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(row.name || '—')}
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(row.dni || '—')}
+                      </td>
+
+
+                      <td>
+
+                        <span
+                          class="
+                            status-badge
+                            ${statusClass}
+                          "
+                        >
+                          ${escapeHtml(suneduStatus)}
+                        </span>
+
+                      </td>
+
+
+                      <td>
+                        ${escapeHtml(formatDate(row.updatedAt))}
+                      </td>
+
+
+                      <td>
+
+                        <button
+                          class="btn ghost viewBtn"
+                          data-kind="sunedu"
+                          data-index="${index}"
+                          type="button"
+                        >
+                          Ver
+                        </button>
+
+                      </td>
+
+                    </tr>
+                  `;
+                }
+              )
+              .join('');
+        }
+
+
+        // =================================================
+        // VIEW BUTTONS
+        // =================================================
+
+        tbody
+          .querySelectorAll(
+            '.viewBtn'
+          )
+          .forEach(
+            btn => {
+
+              const buttonKind =
+                btn.dataset.kind;
+
+
+              const index =
+                parseInt(
+                  btn.dataset.index,
+                  10
+                );
+
+
+              btn.addEventListener(
+                'click',
+
+                () => {
+
+                  const array =
+                    ds[
+                      buttonKind
+                    ] ||
+                    [];
+
+
+                  const row =
+                    array[
+                      index
+                    ];
+
+
+                  if (row) {
+
+                    openDrawer(
+                      buttonKind,
+                      row
+                    );
+                  }
+                }
+              );
+            }
+          );
       }
 
-      function filterRows(kind, term) {
-        const base = datasets[kind] || [];
-        const q = (term || '').trim().toLowerCase();
-        if (!q) return base;
 
-        return base.filter(r => {
-          const parts = [
-            r.code || r.codigo,
-            r.dni,
-            r.name,
-            r.email,
-            r.facultad || r.faculty,
-            r.carrera || r.esp
-          ];
-          const haystack = parts.filter(Boolean).map(v => String(v).toLowerCase()).join(' ');
-          return haystack.includes(q);
-        });
+      // ===================================================
+      // FILTER
+      // ===================================================
+
+      function filterRows(
+        kind,
+        term
+      ) {
+
+        const base =
+          datasets[kind] ||
+          [];
+
+
+        const query =
+          (term || '')
+            .trim()
+            .toLowerCase();
+
+
+        if (!query) {
+          return base;
+        }
+
+
+        return base.filter(
+          row => {
+
+            const parts = [
+
+              row.code ||
+              row.codigo,
+
+              row.dni,
+
+              row.name,
+
+              row.email,
+
+              row.facultad ||
+              row.faculty,
+
+              row.carrera ||
+              row.esp,
+
+              row.suneduStatus,
+            ];
+
+
+            const haystack =
+              parts
+                .filter(Boolean)
+                .map(
+                  value =>
+                    String(value)
+                      .toLowerCase()
+                )
+                .join(' ');
+
+
+            return haystack.includes(
+              query
+            );
+          }
+        );
       }
 
-      function applyFilter(kind) {
-        const term = currentFilters[kind] || '';
-        const filtered = filterRows(kind, term);
 
-        if (kind === 'approved') {
-          renderTable('approvedRows', filtered, 'approved', { approved: filtered });
-          document.getElementById('countApproved').textContent = `${filtered.length} resultado(s)`;
-          updateHeaderCheckbox('approved');
-        } else if (kind === 'rejected') {
-          renderTable('rejectedRows', filtered, 'rejected', { rejected: filtered });
-          document.getElementById('countRejected').textContent = `${filtered.length} resultado(s)`;
-        } else if (kind === 'sunedu') {
-          renderTable('suneduRows', filtered, 'sunedu', { sunedu: filtered });
-          document.getElementById('countSunedu').textContent = `${filtered.length} aprobado(s)`;
-          updateHeaderCheckbox('sunedu');
+      // ===================================================
+      // APPLY FILTER
+      // ===================================================
+
+      function applyFilter(
+        kind
+      ) {
+
+        const term =
+          currentFilters[kind] ||
+          '';
+
+
+        const filtered =
+          filterRows(
+            kind,
+            term
+          );
+
+
+        if (
+          kind ===
+          'approved'
+        ) {
+
+          renderTable(
+            'approvedRows',
+            filtered,
+            'approved',
+            {
+              approved:
+                filtered,
+            }
+          );
+
+
+          document
+            .getElementById(
+              'countApproved'
+            )
+            .textContent =
+            `${filtered.length} resultado(s)`;
+
+
+          updateHeaderCheckbox(
+            'approved'
+          );
+        }
+
+
+        else if (
+          kind ===
+          'rejected'
+        ) {
+
+          renderTable(
+            'rejectedRows',
+            filtered,
+            'rejected',
+            {
+              rejected:
+                filtered,
+            }
+          );
+
+
+          document
+            .getElementById(
+              'countRejected'
+            )
+            .textContent =
+            `${filtered.length} resultado(s)`;
+        }
+
+
+        else if (
+          kind ===
+          'sunedu'
+        ) {
+
+          renderTable(
+            'suneduRows',
+            filtered,
+            'sunedu',
+            {
+              sunedu:
+                filtered,
+            }
+          );
+
+
+          document
+            .getElementById(
+              'countSunedu'
+            )
+            .textContent =
+            `${filtered.length} aprobado(s)`;
+
+
+          updateHeaderCheckbox(
+            'sunedu'
+          );
         }
       }
+
+
+      // ===================================================
+      // LOAD ADMIN DATA FROM MONGODB BACKEND
+      // ===================================================
 
       async function loadAdminData() {
+
         try {
-          const r = await fetch('/api/admin/submissions');
-          const ct = r.headers.get('content-type') || '';
-          let j;
-          if (ct.includes('application/json')) j = await r.json();
-          else {
-            const text = await r.text();
-            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+
+          const response =
+            await fetch(
+              '/api/admin/submissions'
+            );
+
+
+          const contentType =
+            response.headers.get(
+              'content-type'
+            ) || '';
+
+
+          let result;
+
+
+          if (
+            contentType.includes(
+              'application/json'
+            )
+          ) {
+
+            result =
+              await response.json();
+
+          } else {
+
+            const text =
+              await response.text();
+
+
+            throw new Error(
+              'Respuesta no válida del servidor: ' +
+              text.slice(
+                0,
+                120
+              )
+            );
           }
 
-          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo cargar datos');
 
-          const approved = j.data?.approved || [];
-          const rejected = j.data?.rejected || [];
+          if (
+            response.status ===
+            401
+          ) {
 
-          const sunedu = approved.map((row, i) => ({
-            ...row,
-            codigo: row.code || row.codigo || ('A' + (i + 1))
-          }));
+            toast(
+              'La sesión de administrador no está activa.',
+              true
+            );
 
-          datasets = { approved, rejected, sunedu };
-          applyFilter('approved');
-          applyFilter('rejected');
-          applyFilter('sunedu');
-        } catch (e) {
-          toast('No se pudo cargar datos admin', true);
-          console.warn(e);
+
+            throw new Error(
+              result.error ||
+              'Administrator authentication required'
+            );
+          }
+
+
+          if (
+            !response.ok ||
+            !result.ok
+          ) {
+
+            throw new Error(
+              result.error ||
+              'No se pudo cargar datos'
+            );
+          }
+
+
+          const approved =
+            Array.isArray(
+              result.data
+                ?.approved
+            )
+              ? result.data
+                  .approved
+              : [];
+
+
+          const rejected =
+            Array.isArray(
+              result.data
+                ?.rejected
+            )
+              ? result.data
+                  .rejected
+              : [];
+
+
+          const sunedu =
+            approved.map(
+              (
+                row,
+                index
+              ) => ({
+                ...row,
+
+                codigo:
+                  row.code ||
+                  row.codigo ||
+                  (
+                    'A' +
+                    (
+                      index +
+                      1
+                    )
+                  ),
+              })
+            );
+
+
+          datasets = {
+            approved,
+            rejected,
+            sunedu,
+          };
+
+
+          applyFilter(
+            'approved'
+          );
+
+
+          applyFilter(
+            'rejected'
+          );
+
+
+          applyFilter(
+            'sunedu'
+          );
+
+        } catch (error) {
+
+          console.warn(
+            '[admin] load error:',
+            error
+          );
+
+
+          if (
+            !String(
+              error.message ||
+              ''
+            ).includes(
+              'Administrator authentication required'
+            )
+          ) {
+            toast(
+              'No se pudo cargar datos admin',
+              true
+            );
+          }
         }
       }
 
-      async function generateZipForDniList(dniList) {
+
+      // ===================================================
+      // GENERATE ZIP
+      // ===================================================
+
+      async function generateZipForDniList(
+        dniList
+      ) {
+
         try {
-          const r = await fetch('/api/admin/generate-zip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dniList })
-          });
 
-          const ct = r.headers.get('content-type') || '';
-          let j;
-          if (ct.includes('application/json')) j = await r.json();
-          else {
-            const text = await r.text();
-            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+          const response =
+            await fetch(
+              '/api/admin/generate-zip',
+
+              {
+                method:
+                  'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                },
+
+                body:
+                  JSON.stringify({
+                    dniList,
+                  }),
+              }
+            );
+
+
+          const contentType =
+            response.headers.get(
+              'content-type'
+            ) || '';
+
+
+          let result;
+
+
+          if (
+            contentType.includes(
+              'application/json'
+            )
+          ) {
+
+            result =
+              await response.json();
+
+          } else {
+
+            const text =
+              await response.text();
+
+
+            throw new Error(
+              'Respuesta no válida del servidor: ' +
+              text.slice(
+                0,
+                120
+              )
+            );
           }
 
-          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo generar el ZIP');
 
-          toast(`ZIP generado con ${j.total} estudiante(s)`, false);
+          if (
+            !response.ok ||
+            !result.ok
+          ) {
 
-          if (j.url) {
-            const a = document.createElement('a');
-            a.href = j.url;
-            a.download = '';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            throw new Error(
+              result.error ||
+              'No se pudo generar el ZIP'
+            );
           }
-        } catch (err) {
-          console.error(err);
-          toast(err.message || 'Error generando ZIP', true);
-          throw err;
+
+
+          toast(
+            `ZIP generado con ${result.total} estudiante(s)`,
+            false
+          );
+
+
+          if (
+            result.url
+          ) {
+
+            const link =
+              document.createElement(
+                'a'
+              );
+
+
+            link.href =
+              result.url;
+
+
+            link.download =
+              '';
+
+
+            document.body.appendChild(
+              link
+            );
+
+
+            link.click();
+
+
+            link.remove();
+          }
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          toast(
+            error.message ||
+            'Error generando ZIP',
+            true
+          );
+
+
+          throw error;
         }
       }
+
 
       async function generateZipForApproved() {
-        const tbody = document.getElementById('suneduRows');
-        const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
-        const dniList = boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
+
+        const tbody =
+          document.getElementById(
+            'suneduRows'
+          );
+
+
+        const boxes =
+          Array.from(
+            tbody.querySelectorAll(
+              'input[type="checkbox"][data-dni]'
+            )
+          );
+
+
+        const dniList =
+          boxes
+            .filter(
+              box =>
+                box.checked &&
+                box.dataset.dni
+            )
+            .map(
+              box =>
+                box.dataset.dni
+            );
+
 
         if (!dniList.length) {
-          toast('Selecciona al menos un estudiante en SUNEDU', true);
+
+          toast(
+            'Selecciona al menos un estudiante en SUNEDU',
+            true
+          );
+
           return;
         }
-        await generateZipForDniList(dniList);
+
+
+        await generateZipForDniList(
+          dniList
+        );
       }
 
-      async function markSuneduSent(dniList) {
+
+      // ===================================================
+      // MARK SUNEDU SENT
+      // ===================================================
+
+      async function markSuneduSent(
+        dniList
+      ) {
+
         try {
-          if (!dniList.length) { toast('Selecciona al menos un estudiante', true); return; }
 
-          const r = await fetch('/api/admin/mark-sunedu-sent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dniList })
-          });
+          if (!dniList.length) {
 
-          const ct = r.headers.get('content-type') || '';
-          let j;
-          if (ct.includes('application/json')) j = await r.json();
-          else {
-            const text = await r.text();
-            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+            toast(
+              'Selecciona al menos un estudiante',
+              true
+            );
+
+            return;
           }
 
-          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo marcar como enviado');
 
-          toast(`Se marcaron ${j.updated || dniList.length} registro(s) como Enviado`, false);
+          const response =
+            await fetch(
+              '/api/admin/mark-sunedu-sent',
+
+              {
+                method:
+                  'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                },
+
+                body:
+                  JSON.stringify({
+                    dniList,
+                  }),
+              }
+            );
+
+
+          const contentType =
+            response.headers.get(
+              'content-type'
+            ) || '';
+
+
+          let result;
+
+
+          if (
+            contentType.includes(
+              'application/json'
+            )
+          ) {
+
+            result =
+              await response.json();
+
+          } else {
+
+            const text =
+              await response.text();
+
+
+            throw new Error(
+              'Respuesta no válida del servidor: ' +
+              text.slice(
+                0,
+                120
+              )
+            );
+          }
+
+
+          if (
+            !response.ok ||
+            !result.ok
+          ) {
+
+            throw new Error(
+              result.error ||
+              'No se pudo marcar como enviado'
+            );
+          }
+
+
+          toast(
+            `Se marcaron ${
+              result.updated ||
+              dniList.length
+            } registro(s) como Enviado`,
+            false
+          );
+
+
+          drawer.classList.remove(
+            'open'
+          );
+
+
           await loadAdminData();
-        } catch (err) {
-          console.error(err);
-          toast(err.message || 'Error marcando como enviado', true);
-          throw err;
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          toast(
+            error.message ||
+            'Error marcando como enviado',
+            true
+          );
+
+
+          throw error;
         }
       }
 
-      async function deleteByDniList(dniList) {
+
+      // ===================================================
+      // DELETE
+      // ===================================================
+
+      async function deleteByDniList(
+        dniList
+      ) {
+
         try {
-          if (!dniList.length) { toast('Selecciona al menos un estudiante', true); return; }
-          if (!confirm('¿Eliminar las solicitudes seleccionadas? Esta acción no se puede deshacer.')) return;
 
-          const r = await fetch('/api/admin/delete-submissions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dniList })
-          });
+          if (!dniList.length) {
 
-          const ct = r.headers.get('content-type') || '';
-          let j;
-          if (ct.includes('application/json')) j = await r.json();
-          else {
-            const text = await r.text();
-            throw new Error('Respuesta no válida del servidor: ' + text.slice(0, 120));
+            toast(
+              'Selecciona al menos un estudiante',
+              true
+            );
+
+            return;
           }
 
-          if (!r.ok || !j.ok) throw new Error(j.error || 'No se pudo eliminar');
 
-          toast(`Se eliminaron ${j.deleted} registro(s).`, false);
+          if (
+            !confirm(
+              '¿Eliminar las solicitudes seleccionadas? Esta acción no se puede deshacer.'
+            )
+          ) {
+            return;
+          }
+
+
+          const response =
+            await fetch(
+              '/api/admin/delete-submissions',
+
+              {
+                method:
+                  'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                },
+
+                body:
+                  JSON.stringify({
+                    dniList,
+                  }),
+              }
+            );
+
+
+          const contentType =
+            response.headers.get(
+              'content-type'
+            ) || '';
+
+
+          let result;
+
+
+          if (
+            contentType.includes(
+              'application/json'
+            )
+          ) {
+
+            result =
+              await response.json();
+
+          } else {
+
+            const text =
+              await response.text();
+
+
+            throw new Error(
+              'Respuesta no válida del servidor: ' +
+              text.slice(
+                0,
+                120
+              )
+            );
+          }
+
+
+          if (
+            !response.ok ||
+            !result.ok
+          ) {
+
+            throw new Error(
+              result.error ||
+              'No se pudo eliminar'
+            );
+          }
+
+
+          toast(
+            `Se eliminaron ${result.deleted} registro(s).`,
+            false
+          );
+
+
+          drawer.classList.remove(
+            'open'
+          );
+
+
           await loadAdminData();
-        } catch (err) {
-          console.error(err);
-          toast(err.message || 'Error eliminando registros', true);
-          throw err;
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          toast(
+            error.message ||
+            'Error eliminando registros',
+            true
+          );
+
+
+          throw error;
         }
       }
 
-      function collectDniFromTable(tbodyId) {
-        const tbody = document.getElementById(tbodyId);
-        const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
-        return boxes.filter(b => b.checked && b.dataset.dni).map(b => b.dataset.dni);
+
+      // ===================================================
+      // CHECKBOX HELPERS
+      // ===================================================
+
+      function collectDniFromTable(
+        tbodyId
+      ) {
+
+        const tbody =
+          document.getElementById(
+            tbodyId
+          );
+
+
+        const boxes =
+          Array.from(
+            tbody.querySelectorAll(
+              'input[type="checkbox"][data-dni]'
+            )
+          );
+
+
+        return boxes
+          .filter(
+            box =>
+              box.checked &&
+              box.dataset.dni
+          )
+          .map(
+            box =>
+              box.dataset.dni
+          );
       }
 
-      function updateHeaderCheckbox(kind) {
-        const headerId = kind === 'approved' ? 'selectAllApproved' : kind === 'sunedu' ? 'selectAllSunedu' : null;
-        const tbodyId = kind === 'approved' ? 'approvedRows' : kind === 'sunedu' ? 'suneduRows' : null;
-        if (!headerId || !tbodyId) return;
 
-        const header = document.getElementById(headerId);
-        const tbody = document.getElementById(tbodyId);
-        if (!header || !tbody) return;
+      function updateHeaderCheckbox(
+        kind
+      ) {
 
-        const boxes = Array.from(tbody.querySelectorAll('input[type="checkbox"][data-dni]'));
-        if (!boxes.length) { header.checked = false; header.indeterminate = false; return; }
+        const headerId =
+          kind === 'approved'
+            ? 'selectAllApproved'
+            : kind === 'sunedu'
+              ? 'selectAllSunedu'
+              : null;
 
-        const checkedCount = boxes.filter(b => b.checked).length;
-        header.checked = checkedCount === boxes.length;
-        header.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+
+        const tbodyId =
+          kind === 'approved'
+            ? 'approvedRows'
+            : kind === 'sunedu'
+              ? 'suneduRows'
+              : null;
+
+
+        if (
+          !headerId ||
+          !tbodyId
+        ) {
+          return;
+        }
+
+
+        const header =
+          document.getElementById(
+            headerId
+          );
+
+
+        const tbody =
+          document.getElementById(
+            tbodyId
+          );
+
+
+        if (
+          !header ||
+          !tbody
+        ) {
+          return;
+        }
+
+
+        const boxes =
+          Array.from(
+            tbody.querySelectorAll(
+              'input[type="checkbox"][data-dni]'
+            )
+          );
+
+
+        if (!boxes.length) {
+
+          header.checked =
+            false;
+
+
+          header.indeterminate =
+            false;
+
+
+          return;
+        }
+
+
+        const checkedCount =
+          boxes.filter(
+            box =>
+              box.checked
+          ).length;
+
+
+        header.checked =
+          checkedCount ===
+          boxes.length;
+
+
+        header.indeterminate =
+          checkedCount > 0 &&
+          checkedCount <
+          boxes.length;
       }
+
+
+      // ===================================================
+      // CSV EXPORT
+      // ===================================================
 
       function exportApprovedToCSV() {
-        const rows = datasets.approved || [];
-        if (!rows.length) { toast('No hay solicitudes aprobadas para exportar', true); return; }
 
-        const header = ['Código','DNI','Nombre','Correo','FACULTAD','CARRERA','Supabase URL'];
-        const csvLines = [header.join(',')];
+        const rows =
+          datasets.approved ||
+          [];
 
-        rows.forEach((r) => {
-          const code = r.code || r.codigo || '';
-          const dni = r.dni || '';
-          const name = r.name || '';
-          const email = r.email || '';
-          const facultad = r.facultad || r.faculty || '';
-          const carrera = r.carrera || r.esp || '';
-          const supabase = r.supabase_url || getPhotoUrl(r) || '';
 
-          const values = [code,dni,name,email,facultad,carrera,supabase].map(v =>
-            '"' + String(v ?? '').replace(/"/g,'""') + '"'
+        if (!rows.length) {
+
+          toast(
+            'No hay solicitudes aprobadas para exportar',
+            true
           );
-          csvLines.push(values.join(','));
-        });
 
-        const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type:'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+          return;
+        }
 
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth()+1).padStart(2,'0');
-        const d = String(now.getDate()).padStart(2,'0');
 
-        a.href = url;
-        a.download = `uma_solicitudes_aprobadas_${y}${m}${d}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // No Google / Supabase URL.
+        // MongoDB photo itself is binary and should not be
+        // placed inside a CSV file.
+        const header = [
+          'Código',
+          'DNI',
+          'Nombre',
+          'Correo',
+          'FACULTAD',
+          'CARRERA',
+          'Foto MongoDB',
+          'Estado SUNEDU',
+          'Actualizado',
+        ];
+
+
+        const csvLines = [
+          header.join(',')
+        ];
+
+
+        rows.forEach(
+          row => {
+
+            const code =
+              row.code ||
+              row.codigo ||
+              '';
+
+
+            const dni =
+              row.dni ||
+              '';
+
+
+            const name =
+              row.name ||
+              '';
+
+
+            const email =
+              row.email ||
+              '';
+
+
+            const facultad =
+              row.facultad ||
+              row.faculty ||
+              '';
+
+
+            const carrera =
+              row.carrera ||
+              row.esp ||
+              '';
+
+
+            const hasPhoto =
+              row.hasPhoto ===
+              false
+                ? 'No'
+                : getPhotoUrl(row)
+                  ? 'Sí'
+                  : 'No';
+
+
+            const suneduStatus =
+              row.suneduStatus ||
+              'Pendiente';
+
+
+            const updated =
+              formatDate(
+                row.updatedAt
+              );
+
+
+            const values = [
+              code,
+              dni,
+              name,
+              email,
+              facultad,
+              carrera,
+              hasPhoto,
+              suneduStatus,
+              updated,
+            ].map(
+              value =>
+                '"' +
+                String(
+                  value ?? ''
+                )
+                  .replace(
+                    /"/g,
+                    '""'
+                  ) +
+                '"'
+            );
+
+
+            csvLines.push(
+              values.join(',')
+            );
+          }
+        );
+
+
+        const blob =
+          new Blob(
+            [
+              '\uFEFF' +
+              csvLines.join(
+                '\n'
+              ),
+            ],
+
+            {
+              type:
+                'text/csv;charset=utf-8;',
+            }
+          );
+
+
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        const link =
+          document.createElement(
+            'a'
+          );
+
+
+        const now =
+          new Date();
+
+
+        const year =
+          now.getFullYear();
+
+
+        const month =
+          String(
+            now.getMonth() +
+            1
+          )
+            .padStart(
+              2,
+              '0'
+            );
+
+
+        const day =
+          String(
+            now.getDate()
+          )
+            .padStart(
+              2,
+              '0'
+            );
+
+
+        link.href =
+          url;
+
+
+        link.download =
+          `uma_solicitudes_aprobadas_${year}${month}${day}.csv`;
+
+
+        document.body.appendChild(
+          link
+        );
+
+
+        link.click();
+
+
+        document.body.removeChild(
+          link
+        );
+
+
+        URL.revokeObjectURL(
+          url
+        );
       }
 
-      // ✅ UPDATED: buttons now change on click
-      const exportBtn = document.getElementById('exportCSV');
-      exportBtn.addEventListener('click', async () => {
-        setBtnLoading(exportBtn, true, 'Exportando…');
-        await new Promise(r => requestAnimationFrame(() => setTimeout(r, 20))); // allow UI paint
-        try { exportApprovedToCSV(); }
-        finally { setBtnLoading(exportBtn, false); }
-      });
 
-      const btnDelete = document.getElementById('btnDelete');
-      btnDelete.addEventListener('click', async () => {
-        setBtnLoading(btnDelete, true, 'Eliminando…');
-        try { await deleteByDniList(collectDniFromTable('approvedRows')); }
-        finally { setBtnLoading(btnDelete, false); }
-      });
+      // ===================================================
+      // BUTTON EVENTS
+      // ===================================================
 
-      const btnZipSunedu = document.getElementById('btnZipSunedu');
-      btnZipSunedu.addEventListener('click', async () => {
-        setBtnLoading(btnZipSunedu, true, 'Generando…');
-        try { await generateZipForApproved(); }
-        finally { setBtnLoading(btnZipSunedu, false); }
-      });
+      const exportBtn =
+        document.getElementById(
+          'exportCSV'
+        );
 
-      const btnMarkSentSunedu = document.getElementById('btnMarkSentSunedu');
-      btnMarkSentSunedu.addEventListener('click', async () => {
-        setBtnLoading(btnMarkSentSunedu, true, 'Marcando…');
-        try { await markSuneduSent(collectDniFromTable('suneduRows')); }
-        finally { setBtnLoading(btnMarkSentSunedu, false); }
-      });
 
-      const btnDeleteSunedu = document.getElementById('btnDeleteSunedu');
-      btnDeleteSunedu.addEventListener('click', async () => {
-        setBtnLoading(btnDeleteSunedu, true, 'Eliminando…');
-        try { await deleteByDniList(collectDniFromTable('suneduRows')); }
-        finally { setBtnLoading(btnDeleteSunedu, false); }
-      });
+      exportBtn.addEventListener(
+        'click',
 
-      const dGenerate = document.getElementById('dGenerate');
-      dGenerate.addEventListener('click', async () => {
-        setBtnLoading(dGenerate, true, 'Generando…');
-        try {
-          if (!drawerRow || !drawerRow.dni) { toast('No se encontró DNI para este estudiante', true); return; }
-          await generateZipForDniList([drawerRow.dni]);
-        } finally {
-          setBtnLoading(dGenerate, false);
+        async () => {
+
+          setBtnLoading(
+            exportBtn,
+            true,
+            'Exportando…'
+          );
+
+
+          await new Promise(
+            resolve =>
+              requestAnimationFrame(
+                () =>
+                  setTimeout(
+                    resolve,
+                    20
+                  )
+              )
+          );
+
+
+          try {
+
+            exportApprovedToCSV();
+
+          } finally {
+
+            setBtnLoading(
+              exportBtn,
+              false
+            );
+          }
         }
-      });
+      );
 
-      const dMarkSent = document.getElementById('dMarkSent');
-      dMarkSent.addEventListener('click', async () => {
-        setBtnLoading(dMarkSent, true, 'Marcando…');
-        try {
-          if (!drawerRow || !drawerRow.dni) { toast('No se encontró DNI para este estudiante', true); return; }
-          await markSuneduSent([drawerRow.dni]);
-        } finally {
-          setBtnLoading(dMarkSent, false);
+
+      const btnDelete =
+        document.getElementById(
+          'btnDelete'
+        );
+
+
+      btnDelete.addEventListener(
+        'click',
+
+        async () => {
+
+          setBtnLoading(
+            btnDelete,
+            true,
+            'Eliminando…'
+          );
+
+
+          try {
+
+            await deleteByDniList(
+              collectDniFromTable(
+                'approvedRows'
+              )
+            );
+
+          } finally {
+
+            setBtnLoading(
+              btnDelete,
+              false
+            );
+          }
         }
-      });
+      );
 
-      const searchApproved = document.querySelector('#route-approved .search');
-      const searchRejected = document.querySelector('#route-rejected .search');
-      const searchSunedu = document.querySelector('#route-sunedu .search');
 
-      if (searchApproved) searchApproved.addEventListener('input', (e) => { currentFilters.approved = e.target.value; applyFilter('approved'); });
-      if (searchRejected) searchRejected.addEventListener('input', (e) => { currentFilters.rejected = e.target.value; applyFilter('rejected'); });
-      if (searchSunedu) searchSunedu.addEventListener('input', (e) => { currentFilters.sunedu = e.target.value; applyFilter('sunedu'); });
+      const btnZipSunedu =
+        document.getElementById(
+          'btnZipSunedu'
+        );
 
-      const selectAllApproved = document.getElementById('selectAllApproved');
+
+      btnZipSunedu.addEventListener(
+        'click',
+
+        async () => {
+
+          setBtnLoading(
+            btnZipSunedu,
+            true,
+            'Generando…'
+          );
+
+
+          try {
+
+            await generateZipForApproved();
+
+          } finally {
+
+            setBtnLoading(
+              btnZipSunedu,
+              false
+            );
+          }
+        }
+      );
+
+
+      const btnMarkSentSunedu =
+        document.getElementById(
+          'btnMarkSentSunedu'
+        );
+
+
+      btnMarkSentSunedu.addEventListener(
+        'click',
+
+        async () => {
+
+          setBtnLoading(
+            btnMarkSentSunedu,
+            true,
+            'Marcando…'
+          );
+
+
+          try {
+
+            await markSuneduSent(
+              collectDniFromTable(
+                'suneduRows'
+              )
+            );
+
+          } finally {
+
+            setBtnLoading(
+              btnMarkSentSunedu,
+              false
+            );
+          }
+        }
+      );
+
+
+      const btnDeleteSunedu =
+        document.getElementById(
+          'btnDeleteSunedu'
+        );
+
+
+      btnDeleteSunedu.addEventListener(
+        'click',
+
+        async () => {
+
+          setBtnLoading(
+            btnDeleteSunedu,
+            true,
+            'Eliminando…'
+          );
+
+
+          try {
+
+            await deleteByDniList(
+              collectDniFromTable(
+                'suneduRows'
+              )
+            );
+
+          } finally {
+
+            setBtnLoading(
+              btnDeleteSunedu,
+              false
+            );
+          }
+        }
+      );
+
+
+      dGenerate.addEventListener(
+        'click',
+
+        async () => {
+
+          setBtnLoading(
+            dGenerate,
+            true,
+            'Generando…'
+          );
+
+
+          try {
+
+            if (
+              !drawerRow ||
+              !drawerRow.dni ||
+              drawerRow.category !==
+                'approved'
+            ) {
+
+              toast(
+                'Este estudiante no tiene una solicitud aprobada.',
+                true
+              );
+
+              return;
+            }
+
+
+            await generateZipForDniList(
+              [
+                drawerRow.dni
+              ]
+            );
+
+          } finally {
+
+            setBtnLoading(
+              dGenerate,
+              false
+            );
+          }
+        }
+      );
+
+
+      dMarkSent.addEventListener(
+        'click',
+
+        async () => {
+
+          setBtnLoading(
+            dMarkSent,
+            true,
+            'Marcando…'
+          );
+
+
+          try {
+
+            if (
+              !drawerRow ||
+              !drawerRow.dni ||
+              drawerRow.category !==
+                'approved'
+            ) {
+
+              toast(
+                'Este estudiante no tiene una solicitud aprobada.',
+                true
+              );
+
+              return;
+            }
+
+
+            await markSuneduSent(
+              [
+                drawerRow.dni
+              ]
+            );
+
+          } finally {
+
+            setBtnLoading(
+              dMarkSent,
+              false
+            );
+          }
+        }
+      );
+
+
+      // ===================================================
+      // SEARCH EVENTS
+      // ===================================================
+
+      const searchApproved =
+        document.querySelector(
+          '#route-approved .search'
+        );
+
+
+      const searchRejected =
+        document.querySelector(
+          '#route-rejected .search'
+        );
+
+
+      const searchSunedu =
+        document.querySelector(
+          '#route-sunedu .search'
+        );
+
+
+      if (searchApproved) {
+
+        searchApproved
+          .addEventListener(
+            'input',
+
+            event => {
+
+              currentFilters.approved =
+                event.target.value;
+
+
+              applyFilter(
+                'approved'
+              );
+            }
+          );
+      }
+
+
+      if (searchRejected) {
+
+        searchRejected
+          .addEventListener(
+            'input',
+
+            event => {
+
+              currentFilters.rejected =
+                event.target.value;
+
+
+              applyFilter(
+                'rejected'
+              );
+            }
+          );
+      }
+
+
+      if (searchSunedu) {
+
+        searchSunedu
+          .addEventListener(
+            'input',
+
+            event => {
+
+              currentFilters.sunedu =
+                event.target.value;
+
+
+              applyFilter(
+                'sunedu'
+              );
+            }
+          );
+      }
+
+
+      // ===================================================
+      // SELECT ALL APPROVED
+      // ===================================================
+
+      const selectAllApproved =
+        document.getElementById(
+          'selectAllApproved'
+        );
+
+
       if (selectAllApproved) {
-        selectAllApproved.addEventListener('change', (e) => {
-          const checked = e.target.checked;
-          const tbody = document.getElementById('approvedRows');
-          if (!tbody) return;
-          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => cb.checked = checked);
-          e.target.indeterminate = false;
-        });
+
+        selectAllApproved
+          .addEventListener(
+            'change',
+
+            event => {
+
+              const checked =
+                event.target.checked;
+
+
+              const tbody =
+                document.getElementById(
+                  'approvedRows'
+                );
+
+
+              if (!tbody) {
+                return;
+              }
+
+
+              tbody
+                .querySelectorAll(
+                  'input[type="checkbox"][data-dni]'
+                )
+                .forEach(
+                  checkbox => {
+
+                    checkbox.checked =
+                      checked;
+                  }
+                );
+
+
+              event.target.indeterminate =
+                false;
+            }
+          );
       }
 
-      const selectAllSunedu = document.getElementById('selectAllSunedu');
+
+      // ===================================================
+      // SELECT ALL SUNEDU
+      // ===================================================
+
+      const selectAllSunedu =
+        document.getElementById(
+          'selectAllSunedu'
+        );
+
+
       if (selectAllSunedu) {
-        selectAllSunedu.addEventListener('change', (e) => {
-          const checked = e.target.checked;
-          const tbody = document.getElementById('suneduRows');
-          if (!tbody) return;
-          tbody.querySelectorAll('input[type="checkbox"][data-dni]').forEach(cb => cb.checked = checked);
-          e.target.indeterminate = false;
-        });
+
+        selectAllSunedu
+          .addEventListener(
+            'change',
+
+            event => {
+
+              const checked =
+                event.target.checked;
+
+
+              const tbody =
+                document.getElementById(
+                  'suneduRows'
+                );
+
+
+              if (!tbody) {
+                return;
+              }
+
+
+              tbody
+                .querySelectorAll(
+                  'input[type="checkbox"][data-dni]'
+                )
+                .forEach(
+                  checkbox => {
+
+                    checkbox.checked =
+                      checked;
+                  }
+                );
+
+
+              event.target.indeterminate =
+                false;
+            }
+          );
       }
 
-      const approvedRowsEl = document.getElementById('approvedRows');
-      if (approvedRowsEl) {
-        approvedRowsEl.addEventListener('change', (e) => {
-          if (e.target.matches('input[type="checkbox"][data-dni]')) updateHeaderCheckbox('approved');
-        });
+
+      // ===================================================
+      // INDIVIDUAL CHECKBOXES
+      // ===================================================
+
+      const approvedRowsElement =
+        document.getElementById(
+          'approvedRows'
+        );
+
+
+      if (approvedRowsElement) {
+
+        approvedRowsElement
+          .addEventListener(
+            'change',
+
+            event => {
+
+              if (
+                event.target.matches(
+                  'input[type="checkbox"][data-dni]'
+                )
+              ) {
+
+                updateHeaderCheckbox(
+                  'approved'
+                );
+              }
+            }
+          );
       }
 
-      const suneduRowsEl = document.getElementById('suneduRows');
-      if (suneduRowsEl) {
-        suneduRowsEl.addEventListener('change', (e) => {
-          if (e.target.matches('input[type="checkbox"][data-dni]')) updateHeaderCheckbox('sunedu');
-        });
+
+      const suneduRowsElement =
+        document.getElementById(
+          'suneduRows'
+        );
+
+
+      if (suneduRowsElement) {
+
+        suneduRowsElement
+          .addEventListener(
+            'change',
+
+            event => {
+
+              if (
+                event.target.matches(
+                  'input[type="checkbox"][data-dni]'
+                )
+              ) {
+
+                updateHeaderCheckbox(
+                  'sunedu'
+                );
+              }
+            }
+          );
       }
+
+
+      // ===================================================
+      // INITIAL LOAD
+      // ===================================================
 
       loadAdminData();
+
     })();
+
   </script>
+
 </body>
 </html>

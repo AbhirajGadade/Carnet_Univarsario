@@ -1,4 +1,18 @@
 node_modules
 .env
 .DS_Store
-photo/photos/approved
+
+# Google OAuth credentials/tokens
+credentials/
+
+# Local photo/output data
+photo/photos/approved/
+photo/photos/rejected/
+photo/submissions.json
+tmp_zips/
+
+# Python caches/virtual environments
+.venv/
+photo/.venv/
+__pycache__/
+*.pyc
